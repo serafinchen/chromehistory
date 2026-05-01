@@ -58,7 +58,7 @@ def get_links_playwright(page, url):
 if __name__ == "__main__":
 
       query = """ 
-      SELECT visits.visit_time, urls.url, urls.title 
+      SELECT visits.visit_time, urls.url 
       FROM visits, urls 
       WHERE visits.url=urls.id
       ORDER BY visits.visit_time DESC
