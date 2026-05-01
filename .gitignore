@@ -217,9 +217,5 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-<<<<<<< HEAD
 # Custom
-=======
-# Costom
->>>>>>> 82463362adb965fa5b43f35da9dcc77c565ea270
 *.db
