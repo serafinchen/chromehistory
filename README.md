@@ -4,3 +4,5 @@ This Project extracts Chrome Artifacts from C:\Users\user\AppData\Local\Google\C
 
 The goal is to analyze the intent of clicking liks on the internet.
 
+Create .env file with "USER = user"
+
