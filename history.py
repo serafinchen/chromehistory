@@ -10,7 +10,8 @@ def chrome_time_to_datetime(chrome_time):
 
 
 if __name__ == "__main__":
-      historyFile = "C:\\Users\\"+os.getenv("USER")+"\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\History"
+      user = os.getenv("USER")
+      historyFile = "C:\\Users\\"+user+"\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\History"
 
       shutil.copy2(historyFile, "history_copy.db") 
       c = sqlite3.connect("history_copy.db") 
