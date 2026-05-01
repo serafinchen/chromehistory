@@ -2,5 +2,5 @@
 
 This Project extracts Chrome Artifacts from C:\Users\user\AppData\Local\Google\Chrome\User Data\Default\History.
 
-The goal is to analise the intent of clicking liks on the internet.
+The goal is to analyze the intent of clicking liks on the internet.
 
