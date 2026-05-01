@@ -6,3 +6,5 @@ The goal is to analyze the intent of clicking liks on the internet.
 
 Create .env file with "USER = user"
 
+pip install playwright
+playwright install

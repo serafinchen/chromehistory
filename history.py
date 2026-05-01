@@ -3,6 +3,9 @@ import shutil
 import datetime
 import os
 from dotenv import load_dotenv
+from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
+
 load_dotenv()
 
 def chrome_time_to_datetime(chrome_time):
@@ -33,15 +36,57 @@ def sql_query(query):
 
       return result
 
+def get_links_playwright(page, url):
+      try:
+            page.goto(url, timeout=15000, wait_until="domcontentloaded")
+            html = page.content()
+
+            soup = BeautifulSoup(html, "html.parser")
+
+            links = set()
+            for a in soup.find_all("a", href=True):
+                  href = a["href"]
+                  links.add(href)
+
+            return links
+
+      except Exception as e:
+            print(f"Error at page {url}: {e}")
+            return set()
+
 
 if __name__ == "__main__":
 
-      selectStatement = """ 
+      query = """ 
       SELECT visits.visit_time, urls.url, urls.title 
       FROM visits, urls 
       WHERE visits.url=urls.id
       ORDER BY visits.visit_time ASC 
       LIMIT 50; 
       """ 
-      print(sql_query(selectStatement))
+      history = sql_query(query)
+      
+      seen_links = set()
+
+      with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+
+            for entry in history:
+                  url = entry["url"]
+                  print(f"{url}")
+
+                  links = get_links_playwright(page, url)
+                  overlap = links.intersection(seen_links)
+
+                  if overlap:
+                        print("Link appered before")
+                  for l in overlap:
+                        print("   -", l)
+                  else:
+                        print("Link didn't appeared before")
+
+                  seen_links.update(links)
+
+            browser.close()
 
