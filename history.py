@@ -61,7 +61,7 @@ if __name__ == "__main__":
       SELECT visits.visit_time, urls.url, urls.title 
       FROM visits, urls 
       WHERE visits.url=urls.id
-      ORDER BY visits.visit_time ASC 
+      ORDER BY visits.visit_time DESC
       LIMIT 50; 
       """ 
       history = sql_query(query)
@@ -81,8 +81,8 @@ if __name__ == "__main__":
 
                   if overlap:
                         print("Link appered before")
-                  for l in overlap:
-                        print("   -", l)
+                        for l in overlap:
+                              print("   -", l)
                   else:
                         print("Link didn't appeared before")
 
