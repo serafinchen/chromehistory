@@ -5,8 +5,12 @@ import os
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
+from ccl_chromium_reader import ChromiumProfileFolder
+import pathlib
 
 load_dotenv()
+user=os.getenv("USER")
+profile_path = pathlib.Path("C:\\Users\\"+user+"\\AppData\\Local\\Google\\Chrome\\User Data\\Default")
 
 def chrome_time_to_datetime(chrome_time):
       return datetime.datetime(1601, 1, 1) + datetime.timedelta(microseconds=chrome_time)
@@ -56,6 +60,10 @@ def get_links_playwright(page, url):
 
 
 if __name__ == "__main__":
+
+      with ChromiumProfileFolder(profile_path) as profile:
+            history_records=profile.iterate_history_records()
+            print(x for x in history_records)
 
       query = """ 
       SELECT visits.visit_time, urls.url 
