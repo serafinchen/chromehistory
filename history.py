@@ -17,6 +17,7 @@ PROFILE_PATH = (
 HISTORY_FILE = PROFILE_PATH / "History"
 TEMP_DB = "history_copy.db"
 
+#HOW DID THE VISIT TOOK PLACE
 TRANSITIONS = {
       1: "LINK",
       2: "TYPED",
@@ -29,6 +30,7 @@ TRANSITIONS = {
       256: "RELOAD"
 }
 
+#UNDER WHICH CIRCUMSTANCES
 QUALIFIERS = {
       0x00000001: "FORWARD_BACK",
       0x00000002: "FORWARD_BACK_MASK",
@@ -52,7 +54,7 @@ QUALIFIERS = {
       0x00004000: "RELOAD_BYPASSING_CACHE",
       }
 
-def decode_transition(value):
+def decode_core(value):
       if value == 0:
             return "UNKNOWN"
 
@@ -72,7 +74,7 @@ def decode_qualifier(value: int) -> str:
             if value & flag:
                   result.append(name)
 
-      return "|".join(result) if result else "UNKNOWN"            
+      return set(result)        
 
 def chrome_time_to_datetime(chrome_time):
       if isinstance(chrome_time, datetime.datetime):
@@ -96,21 +98,34 @@ def load_history(profile_path):
 
       return history
 
-
-
-
-
 def compute_intent_score(h):
       score = 0.0
 
-      core = str(h.transition.core)
+      core = decode_core(h.transition.core)
+      qualifier = decode_qualifier(h.transition.qualifier)
 
-      if core == "LINK":
+      #Core
+      if "LINK" in core:
             score += 2.0
-      elif core in ["AUTO_SUBFRAME", "CLIENT_REDIRECT"]:
-            score -= 2.0
-      elif core == "TYPED":
-            score += 1
+
+      elif "TYPED" in core:
+            score += 2.5
+
+      elif "FORM_SUBMIT" in core:
+            score += 2.0
+
+      elif "AUTO_SUBFRAME" in core:
+            score -= 0.5
+
+      elif "RELOAD" in core:
+            score += 0.2
+
+      #Qualifier
+      if "CLIENT_REDIRECT" in qualifier:
+            score -= 1.5
+
+      if "SERVER_REDIRECT" in qualifier:
+            score -= 1.5
 
       duration = h.visit_duration.total_seconds() if h.visit_duration else 0
 
@@ -142,8 +157,8 @@ def normalize(history):
                   "from_visit_id": h.from_visit_id,
                   "opener_visit_id": h.opener_visit_id,
 
-                  "transition_core": decode_transition(h.transition.core),
-                  "transition_qualifier": decode_qualifier(h.transition.qualifier),
+                  "transition_core": decode_core(h.transition.core),
+                  "transition_qualifier": "|".join(decode_qualifier(h.transition.qualifier)),
 
                   "intent_score": compute_intent_score(h)
             })
@@ -151,6 +166,7 @@ def normalize(history):
 
 
 if __name__ == "__main__":
-      history = load_history(PROFILE_PATH)
+      copy_history_db()
+      history = load_history(TEMP_DB)
       data = normalize(history)
       print(data)
