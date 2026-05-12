@@ -7,10 +7,10 @@ The goal is to analyze the intent of clicking liks on the internet.
 
 ## Setup
 
-Create .env file with "USER = user"
-
 pip install playwright
 
 playwright install
+
+pip install networkx
 
 pip install git+https://github.com/cclgroupltd/ccl_chromium_reader.git
