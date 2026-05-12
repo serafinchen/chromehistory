@@ -29,6 +29,51 @@ TRANSITIONS = {
       256: "RELOAD"
 }
 
+QUALIFIERS = {
+      0x00000001: "FORWARD_BACK",
+      0x00000002: "FORWARD_BACK_MASK",
+
+      0x00000004: "CLIENT_REDIRECT",
+      0x00000008: "SERVER_REDIRECT",
+      0x00000010: "IS_REDIRECT_MASK",
+
+      0x00000020: "FROM_ADDRESS_BAR",
+      0x00000040: "FROM_API",
+      0x00000080: "FROM_START_PAGE",
+
+      0x00000100: "IS_MAIN_FRAME",
+      0x00000200: "IS_SUBFRAME",
+
+      0x00000400: "BLOCKED",
+      0x00000800: "SAFE_BROWSING",
+      0x00001000: "ALLOW_POPUP",
+
+      0x00002000: "RELOAD",
+      0x00004000: "RELOAD_BYPASSING_CACHE",
+      }
+
+def decode_transition(value):
+      if value == 0:
+            return "UNKNOWN"
+
+      result = []
+      for flag, name in TRANSITIONS.items():
+            if value & flag:
+                  result.append(name)
+
+      return "|".join(result) if result else "UNKNOWN"
+
+def decode_qualifier(value: int) -> str:
+      if value == 0:
+            return "NONE"
+
+      result = []
+      for flag, name in QUALIFIERS.items():
+            if value & flag:
+                  result.append(name)
+
+      return "|".join(result) if result else "UNKNOWN"            
+
 def chrome_time_to_datetime(chrome_time):
       if isinstance(chrome_time, datetime.datetime):
             return chrome_time
@@ -51,16 +96,9 @@ def load_history(profile_path):
 
       return history
 
-def decode_transition(value):
-      if value == 0:
-            return "UNKNOWN"
 
-      result = []
-      for k, v in TRANSITIONS.items():
-            if value & k:
-                  result.append(v)
 
-      return "|".join(result) if result else "UNKNOWN"
+
 
 def compute_intent_score(h):
       score = 0.0
@@ -105,7 +143,7 @@ def normalize(history):
                   "opener_visit_id": h.opener_visit_id,
 
                   "transition_core": decode_transition(h.transition.core),
-                  "transition_qualifier": str(h.transition.qualifier),
+                  "transition_qualifier": decode_qualifier(h.transition.qualifier),
 
                   "intent_score": compute_intent_score(h)
             })
@@ -115,7 +153,4 @@ def normalize(history):
 if __name__ == "__main__":
       history = load_history(PROFILE_PATH)
       data = normalize(history)
-      print(data[1])
-      print(data[10])
-      print(data[23])
-      print(data[6])
+      print(data)
