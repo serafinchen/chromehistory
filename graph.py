@@ -1,5 +1,8 @@
 from ccl_chromium_reader import ChromiumProfileFolder
-import nx
+import networkx as nx
+from pyvis.network import Network
+import webbrowser
+import os
 
 def build_chrome_history_graph(profile_path):
       G = nx.DiGraph()
@@ -35,3 +38,52 @@ def build_chrome_history_graph(profile_path):
                   )
 
       return G
+
+def plot_history_pyvis(G, output_file="chrome_history.html"):
+      net = Network(
+            height="800px",
+            width="100%",
+            directed=True,
+            bgcolor="#ffffff",
+            font_color="black"
+      )
+
+      for n, data in G.nodes(data=True):
+            title = data.get("title", "")
+            url = data.get("url", "")
+
+            net.add_node(
+                  n,
+                  label=title[:30] if title else str(n),
+                  title=url,
+                  size=10
+            )
+
+      for u, v, data in G.edges(data=True):
+            net.add_edge(
+                  u,
+                  v,
+                  title=data.get("type", ""),
+                  arrows="to"
+            )
+
+      net.set_options("""
+      var options = {
+            "physics": {
+            "forceAtlas2Based": {
+            "gravitationalConstant": -50,
+            "centralGravity": 0.01,
+            "springLength": 100
+            },
+            "solver": "forceAtlas2Based",
+            "stabilization": {
+            "iterations": 50
+            }
+            }
+      }
+      """)
+
+      
+      net.write_html(output_file, open_browser=False)
+
+      webbrowser.open("file://" + os.path.abspath(output_file))

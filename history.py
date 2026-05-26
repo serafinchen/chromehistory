@@ -3,6 +3,7 @@ from ccl_chromium_reader import ChromiumProfileFolder
 import pathlib
 from urllib.parse import urlparse
 import datetime
+from graph import plot_history_pyvis, build_chrome_history_graph
 
 PROFILE_PATH = (
       pathlib.Path.home()
@@ -170,3 +171,6 @@ if __name__ == "__main__":
       history = load_history(PROFILE_PATH)
       data = normalize(history)
       print(data)
+
+      G = build_chrome_history_graph(PROFILE_PATH)
+      plot_history_pyvis(G)
