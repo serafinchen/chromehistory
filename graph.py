@@ -4,12 +4,15 @@ from pyvis.network import Network
 import webbrowser
 import os
 
-def build_chrome_history_graph(profile_path):
+def build_chrome_history_graph(profile_path, limit=200):
       G = nx.DiGraph()
 
       with ChromiumProfileFolder(profile_path) as profile:
             history = list(profile.iterate_history_records())
 
+      history.sort(key=lambda h: h.visit_time, reverse=True)
+      history = history[:limit]
+      
       lookup = {h.rec_id: h for h in history}
 
       for h in history:
