@@ -167,6 +167,6 @@ def normalize(history):
 
 if __name__ == "__main__":
       copy_history_db()
-      history = load_history(TEMP_DB)
+      history = load_history(PROFILE_PATH)
       data = normalize(history)
       print(data)
