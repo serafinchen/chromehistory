@@ -140,7 +140,7 @@ def compute_intent_score(h):
       if h.from_visit_id:
             score += 1
 
-      return round(score)
+      return score
 
 def normalize(history):
       data = []

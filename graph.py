@@ -3,7 +3,19 @@ import networkx as nx
 from pyvis.network import Network
 import webbrowser
 import os
+from history import compute_intent_score
 
+def score_to_color(score):
+      if score >= 3:
+            return "#2eccb7" 
+      elif score >= 1:
+            return "#f1c40f"
+      elif score >= 0:
+            return "#95a5a6"
+      else:
+            return "#e74c3c"
+
+      
 def build_chrome_history_graph(profile_path, limit=200):
       G = nx.DiGraph()
 
@@ -14,13 +26,15 @@ def build_chrome_history_graph(profile_path, limit=200):
       history = history[:limit]
       
       lookup = {h.rec_id: h for h in history}
+      score = compute_intent_score()
 
       for h in history:
             G.add_node(
                   h.rec_id,
                   url=h.url,
                   title=h.title,
-                  visit_time=str(h.visit_time)
+                  visit_time=str(h.visit_time),
+                  intent_score=score
             )
 
             if h.from_visit_id in lookup:
@@ -54,21 +68,38 @@ def plot_history_pyvis(G, output_file="chrome_history.html"):
       for n, data in G.nodes(data=True):
             title = data.get("title", "")
             url = data.get("url", "")
+            time = data.get("visit_time", "")
+            score = data.get("intent_score", 0)
+
+            tooltip = f"""
+            <b>{title}</b><br>
+            URL: {url}<br>
+            Time: {time}<br>
+            Intent Score: {score}
+            """
 
             net.add_node(
                   n,
                   label=title[:30] if title else str(n),
-                  title=url,
-                  size=10
+                  title=tooltip,
+                  size=10 + abs(score) * 2,
+                  color = score_to_color(score)
             )
 
-      for u, v, data in G.edges(data=True):
-            net.add_edge(
-                  u,
-                  v,
-                  title=data.get("type", ""),
-                  arrows="to"
-            )
+            for u, v, data in G.edges(data=True):
+                  edge_score = (G.nodes[u]["intent_score"] + G.nodes[v]["intent_score"]) / 2
+
+                  color = score_to_color(edge_score)
+                  width = max(1, abs(edge_score))
+
+                  net.add_edge(
+                        u,
+                        v,
+                        title=f"Edge intent score: {edge_score:.2f}",
+                        arrows="to",
+                        color=color,
+                        width=width
+                  )
 
       net.set_options("""
       var options = {
