@@ -38,19 +38,13 @@ def compute_intent_score(h):
       if "FORWARD_BACK" in qualifier: #user navigated via browser back/forward history
             score -= 1.0
 
-      if "FORWARD_BACK_MASK" in qualifier: #technical history-navigation mask flag
-            score -= 1.5
-
       if "CLIENT_REDIRECT" in qualifier: #redirect triggered by JavaScript/meta refresh
             score -= 1.5
 
       if "SERVER_REDIRECT" in qualifier: #HTTP redirect from server (301/302/etc.)
             score -= 1.0
 
-      if "IS_REDIRECT_MASK" in qualifier: #technical redirect-related mask flag
-            score -= 1.5
-
-      if "FROM_ADDRESS_BAR" in qualifier:  #navigation initiated from browser address bar
+      if "FROM_ADDRESS_BAR" in qualifier: #navigation initiated from browser address bar
             score += 1.5
 
       if "FROM_API" in qualifier: #page opened by external app/API/browser automation
