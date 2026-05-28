@@ -38,35 +38,42 @@ QUALIFIERS = {
       0x00004000: "RELOAD_BYPASSING_CACHE",
       }
       
-def decode_core(value):
+def decode_core(value: int) -> list[str]:
       if value == 0:
-            return "UNKNOWN"
+            return []
 
       result = []
+
       for flag, name in TRANSITIONS.items():
             if value & flag:
                   result.append(name)
 
-      return "|".join(result) if result else "UNKNOWN"
+      return result
 
-def decode_qualifier(value: int) -> str:
+def decode_qualifier(value: int) -> list[str]:
       if value == 0:
-            return "NONE"
+            return []
 
       result = []
+
       for flag, name in QUALIFIERS.items():
             if value & flag:
                   result.append(name)
 
-      return set(result)       
+      return result 
 
 def score_to_color(score):
-      if score >= 3:
-            return "#2eccb7" 
-      elif score >= 1:
+
+      if score >= 10:
+            return "#1abc9c"
+      elif score >= 5:
+            return "#2ecc71"
+      elif score >= 2:
             return "#f1c40f"
       elif score >= 0:
             return "#95a5a6"
+      elif score >= -5:
+            return "#e67e22"
       else:
             return "#e74c3c"
       
@@ -79,8 +86,11 @@ def chrome_time_to_datetime(chrome_time):
 def normalize_url(url):
       try:
             parsed = urlparse(url)
-            return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-
+            return (
+                  f"{parsed.scheme}://{parsed.netloc}"
+                  f"{parsed.path}"
+                  f"?{parsed.query}"
+            ).rstrip("/")
       except Exception:
             return url
       

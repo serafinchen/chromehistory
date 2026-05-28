@@ -64,4 +64,5 @@ def normalize(history) -> list[HistoryVisit]:
 
                   intent_score = compute_intent_score(h)
             )
+            data.append(normalized_visit)
       return data
