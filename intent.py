@@ -1,4 +1,5 @@
 from helpers import decode_core, decode_qualifier
+import math
 
 
 CORE_WEIGHTS = {
@@ -53,34 +54,26 @@ def compute_intent_score(h):
 
       #Core
       for c in core:
-            score += CORE_WEIGHTS.get(c, 0)
+            score = CORE_WEIGHTS.get(c, 0)
 
       for q in qualifiers:
-            score += QUALIFIER_WEIGHTS.get(q, 0)
+            score = QUALIFIER_WEIGHTS.get(q, 0)
 
       duration = h.visit_duration.total_seconds() if h.visit_duration else 0
-
+      duration_score = math.log1p(duration)
+      duration_score = (duration_score-1.0)*2.2
 
       if duration < 2:
-            score -= 6
+            duration_score -= 6
 
       elif duration < 5:
-            score -= 3
+            duration_score -= 2
 
-      elif duration < 15:
+      score += duration_score
+
+      if h.from_visit_id is not None:
             score += 1
 
-      elif duration < 60:
-            score += 4
-
-      elif duration < 300:
-            score += 8
-
-      else:
-            score += 12
-
-
-      if h.from_visit_id:
-            score += 1
+      score = max(-15, min(score, 15))      
 
       return score
