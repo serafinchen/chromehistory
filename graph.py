@@ -5,36 +5,37 @@ import webbrowser
 import os
 from helpers import score_to_color
 from intent import compute_intent_score
+from history import load_history, normalize, HistoryVisit
       
-def build_chrome_history_graph(profile_path, limit=200):
+def build_chrome_history_graph(visits: list[HistoryVisit], limit=200) -> nx.DiGraph:
       G = nx.DiGraph()
+      visits.sort(key=lambda v:v.visit_time, reverse=True)
 
-      with ChromiumProfileFolder(profile_path) as profile:
-            history = list(profile.iterate_history_records())
+      visits = visits[:limit]
 
-      history.sort(key=lambda h: h.visit_time, reverse=True)
-      history = history[:limit]
+      lookup = {
+            visit.visit_id: visit
+            for visit in visits
+      }
 
-      lookup = {h.rec_id: h for h in history}
-
-      for h in history:
-            intent_score = compute_intent_score(h)
-
+      for v in visits:
             G.add_node(
-                  h.rec_id,
-                  url=h.url,
-                  title=h.title,
-                  visit_time=str(h.visit_time),
-                  intent_score=intent_score
+                  v.visit_id,
+                  url=v.url,
+                  title=v.title,
+                  visit_time=v.visit_time,
+                  visit_duration=v.visit_duration_seconds,
+                  intent_score=v.intent_score
             )
 
-            if h.from_visit_id in lookup:
-                  parent = lookup[h.from_visit_id]
-                  G.add_edge(parent.rec_id, h.rec_id, type="from_visit")
+            #navigation
+            if v.from_visit_id in lookup:
+                  parent = lookup[v.from_visit_id]
+                  G.add_edge(parent.visit_id, v.visit_id, type="from_visit")
 
-            if h.opener_visit_id in lookup:
-                  opener = lookup[h.opener_visit_id]
-                  G.add_edge(opener.rec_id, h.rec_id, type="opener")
+            if v.opener_visit_id in lookup:
+                  opener = lookup[v.opener_visit_id]
+                  G.add_edge(opener.visit_id, v.visit_id, type="opener")
 
       return G
 

@@ -8,3 +8,4 @@ if __name__ == "__main__":
 
       G = build_chrome_history_graph(PROFILE_PATH)
       plot_history_pyvis(G)
+      

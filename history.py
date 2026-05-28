@@ -2,8 +2,7 @@ import datetime
 import shutil
 from ccl_chromium_reader import ChromiumProfileFolder
 import pathlib
-
-from pyparsing import Optional
+from typing import Optional
 from helpers import decode_core, decode_qualifier, chrome_time_to_datetime, normalize_url
 from intent import compute_intent_score
 from dataclasses import dataclass
