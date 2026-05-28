@@ -32,14 +32,15 @@ def build_chrome_history_graph(visits: list[HistoryVisit], limit=200) -> nx.DiGr
             if v.from_visit_id in lookup:
                   parent = lookup[v.from_visit_id]
                   G.add_edge(parent.visit_id, v.visit_id, type="from_visit")
-
+            
+            #opened in new tab
             if v.opener_visit_id in lookup:
                   opener = lookup[v.opener_visit_id]
                   G.add_edge(opener.visit_id, v.visit_id, type="opener")
 
       return G
 
-def plot_history_pyvis(G, output_file="chrome_history.html"):
+def plot_history_pyvis(G: nx.DiGraph, output_file: str = "chrome_history.html") -> None:
       net = Network(
             height="800px",
             width="100%",
@@ -48,6 +49,7 @@ def plot_history_pyvis(G, output_file="chrome_history.html"):
             font_color="black"
       )
 
+      #Nodes
       for n, data in G.nodes(data=True):
             title = data.get("title", "")
             url = data.get("url", "")
@@ -69,6 +71,7 @@ def plot_history_pyvis(G, output_file="chrome_history.html"):
                   color = score_to_color(score)
             )
 
+      #Edges
       for u, v, data in G.edges(data=True):
             u_score = G.nodes[u].get("intent_score", 0)
             v_score = G.nodes[v].get("intent_score", 0)
@@ -91,15 +94,15 @@ def plot_history_pyvis(G, output_file="chrome_history.html"):
       net.set_options("""
       var options = {
             "physics": {
-            "forceAtlas2Based": {
-            "gravitationalConstant": -50,
-            "centralGravity": 0.01,
-            "springLength": 100
-            },
-            "solver": "forceAtlas2Based",
-            "stabilization": {
-            "iterations": 50
-            }
+                  "forceAtlas2Based": {
+                        "gravitationalConstant": -50,
+                        "centralGravity": 0.01,
+                        "springLength": 100
+                  },
+                  "solver": "forceAtlas2Based",
+                  "stabilization": {
+                        "iterations": 50
+                  }
             }
       }
       """)
