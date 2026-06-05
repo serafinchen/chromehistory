@@ -73,8 +73,9 @@ def load_cache(cache_path: pathlib.Path) -> dict[str, dict]:
       except Exception:
             return cache_data
 
-      for record in cache:
+      for key in cache.keys():
             try:
+                  record = cache[key]
                   url = normalize_url(record.key)
 
                   headers_raw: dict[str, str] = {}
