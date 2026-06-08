@@ -45,18 +45,16 @@ class HistoryVisit:
       transition_qualifier: str
       intent_score: float
 
-      # Cache — nur was für Intent relevant ist
       cached: bool = False
-      response_code: Optional[int] = None        # wurde Seite geladen? Fehler?
-      content_type: Optional[str] = None         # html? json? was war es?
-      content_language: Optional[str] = None     # welche Sprache
-      is_personalized: bool = False              # Vary: Cookie/Authorization
-      is_no_store: bool = False                  # bewusst nicht gecacht → sensitiv?
-      cache_age_seconds: Optional[int] = None    # wie alt war gecachter Inhalt
-      last_modified: Optional[str] = None        # wann geändert
-      asset_count: int = 0                       # wie viele Assets von dieser Domain
-      total_bytes: int = 0                       # wie viel wurde geladen
-
+      response_code: Optional[int] = None       
+      content_type: Optional[str] = None        
+      content_language: Optional[str] = None     
+      is_personalized: bool = False              
+      is_no_store: bool = False                  
+      cache_age_seconds: Optional[int] = None   
+      last_modified: Optional[str] = None        
+      asset_count: int = 0                      
+      total_bytes: int = 0                       
 
 def copy_history_db():
       shutil.copy2(HISTORY_FILE, TEMP_DB)
