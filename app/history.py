@@ -5,7 +5,7 @@ from typing import Optional
 from ccl_chromium_reader import ChromiumProfileFolder
 from ccl_chromium_reader import ccl_chromium_cache
 from app.helpers import decode_core, decode_qualifier, chrome_time_to_datetime, normalize_url
-from app.intent import compute_intent_score
+from analytics import compute_intent_score
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
