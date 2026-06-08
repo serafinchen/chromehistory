@@ -6,10 +6,10 @@ import pandas as pd
 import networkx as nx
 from urllib.parse import urlparse
 import json
+from dataclasses import asdict
 
 # ── Import your existing modules ──────────────────────────────────────────────
 from history import load_history, load_cache, normalize, PROFILE_PATH, CACHE_PATHS
-from graph import build_chrome_history_graph
 from helpers import score_to_color
 
 # ── Load data ─────────────────────────────────────────────────────────────────
@@ -19,42 +19,18 @@ cache_data  = load_cache(CACHE_PATHS["chrome"])
 visits      = normalize(history_raw, cache_data)
 visits.sort(key=lambda v: v.visit_time)
 
-df = pd.DataFrame([{
-      "visit_id":               v.visit_id,
-      "url":                    v.url,
-      "domain":                 urlparse(v.url).netloc,
-      "title":                  v.title,
-      "visit_time":             v.visit_time,
-      "duration":               v.visit_duration_seconds,
-      "intent_score":           v.intent_score,
-      "transition_core":        v.transition_core,
-      "transition_qualifier":   v.transition_qualifier,
-      "from_visit_id":          v.from_visit_id,
-      "opener_visit_id":        v.opener_visit_id,
-      "cached":                 v.cached,
-      "content_type":           v.content_type,
-      "is_personalized":        getattr(v, "is_personalized", False),
-      "is_no_store":            getattr(v, "is_no_store", False),
-      "response_code":          v.response_code,
-      "asset_count":            getattr(v, "asset_count", 0),
-      "total_bytes":            getattr(v, "total_bytes", 0),
-} for v in visits])
+def visits_to_df(visits):
+      df = pd.DataFrame([asdict(v) for v in visits])
+      df["domain"] = df["url"].apply(lambda u: urlparse(u).netloc)
+      df["visit_time_dt"] = pd.to_datetime(df["visit_time"])
+      return df
 
-df["visit_time_dt"] = pd.to_datetime(df["visit_time"])
-
-# ── Color helpers ──────────────────────────────────────────────────────────────
-def intent_color(score):
-      if score >= 10:  return "#00ff9d"
-      elif score >= 5: return "#7fff7f"
-      elif score >= 2: return "#ffd700"
-      elif score >= 0: return "#888ea8"
-      elif score >= -5:return "#ff8c42"
-      else:            return "#ff3d5a"
 
 def intent_color_vec(scores):
-      return [intent_color(s) for s in scores]
+      return [score_to_color(s) for s in scores]
 
-# ── Session segmentation ───────────────────────────────────────────────────────
+df = visits_to_df(visits)
+
 SESSION_GAP = 30 * 60  # 30 min
 df = df.sort_values("visit_time_dt").reset_index(drop=True)
 session_ids = [0]
@@ -63,196 +39,197 @@ for i in range(1, len(df)):
       session_ids.append(session_ids[-1] + (1 if gap > SESSION_GAP else 0))
 df["session_id"] = session_ids
 
-# ── App ────────────────────────────────────────────────────────────────────────
-app = dash.Dash(__name__, title="History Intelligence")
+
+#App
+app = dash.Dash(__name__, title="History Analyser")
 
 app.index_string = '''
 <!DOCTYPE html>
 <html>
 <head>
-    {%metas%}
-    <title>{%title%}</title>
-    {%favicon%}
-    {%css%}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      {%metas%}
+      <title>{%title%}</title>
+      {%favicon%}
+      {%css%}
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+      <style>
+            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        :root {
-            --bg:        #08090d;
-            --surface:   #0f1117;
-            --surface2:  #161820;
-            --border:    #1f2130;
-            --accent:    #00ff9d;
-            --accent2:   #7b5cff;
-            --danger:    #ff3d5a;
-            --warn:      #ffd700;
-            --text:      #e2e4ef;
-            --muted:     #555878;
-            --font-mono: 'Space Mono', monospace;
-            --font-head: 'Syne', sans-serif;
-        }
+            :root {
+                  --bg:        #08090d;
+                  --surface:   #0f1117;
+                  --surface2:  #161820;
+                  --border:    #1f2130;
+                  --accent:    #00ff9d;
+                  --accent2:   #7b5cff;
+                  --danger:    #ff3d5a;
+                  --warn:      #ffd700;
+                  --text:      #e2e4ef;
+                  --muted:     #555878;
+                  --font-mono: 'Space Mono', monospace;
+                  --font-head: 'Syne', sans-serif;
+            }
 
-        html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; }
+            html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; }
 
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+            ::-webkit-scrollbar { width: 4px; }
+            ::-webkit-scrollbar-track { background: var(--bg); }
+            ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-        #root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+            #root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* ── Header ── */
-        .header {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 24px;
-            border-bottom: 1px solid var(--border);
-            background: var(--surface);
-            flex-shrink: 0;
-        }
-        .header-title {
-            font-family: var(--font-head);
-            font-size: 18px; font-weight: 800; letter-spacing: -0.5px;
-            color: var(--accent);
-        }
-        .header-title span { color: var(--text); }
-        .header-meta { color: var(--muted); font-size: 11px; }
+            /* ── Header ── */
+            .header {
+                  display: flex; align-items: center; justify-content: space-between;
+                  padding: 12px 24px;
+                  border-bottom: 1px solid var(--border);
+                  background: var(--surface);
+                  flex-shrink: 0;
+            }
+            .header-title {
+                  font-family: var(--font-head);
+                  font-size: 18px; font-weight: 800; letter-spacing: -0.5px;
+                  color: var(--accent);
+            }
+            .header-title span { color: var(--text); }
+            .header-meta { color: var(--muted); font-size: 11px; }
 
-        /* ── Controls bar ── */
-        .controls {
-            display: flex; align-items: center; gap: 16px;
-            padding: 10px 24px;
-            border-bottom: 1px solid var(--border);
-            background: var(--surface);
-            flex-shrink: 0;
-            flex-wrap: wrap;
-        }
-        .ctrl-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+            /* ── Controls bar ── */
+            .controls {
+                  display: flex; align-items: center; gap: 16px;
+                  padding: 10px 24px;
+                  border-bottom: 1px solid var(--border);
+                  background: var(--surface);
+                  flex-shrink: 0;
+                  flex-wrap: wrap;
+            }
+            .ctrl-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
 
-        .dash-slider .rc-slider-rail    { background: var(--border); }
-        .dash-slider .rc-slider-track   { background: var(--accent2); }
-        .dash-slider .rc-slider-handle  { border-color: var(--accent2); background: var(--bg); }
+            .dash-slider .rc-slider-rail    { background: var(--border); }
+            .dash-slider .rc-slider-track   { background: var(--accent2); }
+            .dash-slider .rc-slider-handle  { border-color: var(--accent2); background: var(--bg); }
 
-        /* ── Main layout ── */
-        .main {
-            display: grid;
-            grid-template-columns: 1fr 340px;
-            grid-template-rows: 1fr 1fr;
-            gap: 1px;
-            flex: 1;
-            overflow: hidden;
-            background: var(--border);
-        }
+            /* ── Main layout ── */
+            .main {
+                  display: grid;
+                  grid-template-columns: 1fr 340px;
+                  grid-template-rows: 1fr 1fr;
+                  gap: 1px;
+                  flex: 1;
+                  overflow: hidden;
+                  background: var(--border);
+            }
 
-        .panel {
-            background: var(--surface);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        .panel-header {
-            padding: 10px 16px 8px;
-            border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-            flex-shrink: 0;
-        }
-        .panel-title {
-            font-family: var(--font-head);
-            font-size: 11px; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 2px;
-            color: var(--muted);
-        }
-        .panel-badge {
-            font-size: 10px; padding: 2px 8px;
-            background: var(--surface2); border: 1px solid var(--border);
-            border-radius: 2px; color: var(--accent);
-        }
-        .panel-body { flex: 1; overflow: hidden; position: relative; }
+            .panel {
+                  background: var(--surface);
+                  overflow: hidden;
+                  display: flex;
+                  flex-direction: column;
+            }
+            .panel-header {
+                  padding: 10px 16px 8px;
+                  border-bottom: 1px solid var(--border);
+                  display: flex; align-items: center; justify-content: space-between;
+                  flex-shrink: 0;
+            }
+            .panel-title {
+                  font-family: var(--font-head);
+                  font-size: 11px; font-weight: 600;
+                  text-transform: uppercase; letter-spacing: 2px;
+                  color: var(--muted);
+            }
+            .panel-badge {
+                  font-size: 10px; padding: 2px 8px;
+                  background: var(--surface2); border: 1px solid var(--border);
+                  border-radius: 2px; color: var(--accent);
+            }
+            .panel-body { flex: 1; overflow: hidden; position: relative; }
 
-        /* ── Drilldown panel (right column, spans 2 rows) ── */
-        .panel-drilldown {
-            grid-row: 1 / 3;
-            background: var(--surface);
-            display: flex; flex-direction: column;
-            overflow: hidden;
-        }
-        .drilldown-body {
-            flex: 1; overflow-y: auto; padding: 12px 16px;
-        }
+            /* ── Drilldown panel (right column, spans 2 rows) ── */
+            .panel-drilldown {
+                  grid-row: 1 / 3;
+                  background: var(--surface);
+                  display: flex; flex-direction: column;
+                  overflow: hidden;
+            }
+            .drilldown-body {
+                  flex: 1; overflow-y: auto; padding: 12px 16px;
+            }
 
-        /* ── Visit cards ── */
-        .visit-card {
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            padding: 10px 12px;
-            margin-bottom: 8px;
-            background: var(--surface2);
-            cursor: pointer;
-            transition: border-color 0.15s;
-            position: relative;
-        }
-        .visit-card:hover { border-color: var(--accent2); }
-        .visit-card.active { border-color: var(--accent); }
-        .visit-card.ancestor { border-color: var(--accent2); opacity: 0.7; }
-        .visit-card.child { border-color: var(--muted); opacity: 0.6; }
+            /* ── Visit cards ── */
+            .visit-card {
+                  border: 1px solid var(--border);
+                  border-radius: 4px;
+                  padding: 10px 12px;
+                  margin-bottom: 8px;
+                  background: var(--surface2);
+                  cursor: pointer;
+                  transition: border-color 0.15s;
+                  position: relative;
+            }
+            .visit-card:hover { border-color: var(--accent2); }
+            .visit-card.active { border-color: var(--accent); }
+            .visit-card.ancestor { border-color: var(--accent2); opacity: 0.7; }
+            .visit-card.child { border-color: var(--muted); opacity: 0.6; }
 
-        .vc-score {
-            position: absolute; top: 10px; right: 10px;
-            font-size: 11px; font-weight: 700;
-            font-family: var(--font-head);
-        }
-        .vc-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; padding-right: 40px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .vc-url   { font-size: 10px; color: var(--muted); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .vc-meta  { display: flex; gap: 8px; flex-wrap: wrap; }
-        .vc-tag   { font-size: 10px; padding: 1px 6px; border-radius: 2px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
-        .vc-tag.hi { border-color: var(--accent); color: var(--accent); }
-        .vc-tag.warn { border-color: var(--warn); color: var(--warn); }
-        .vc-tag.danger { border-color: var(--danger); color: var(--danger); }
+            .vc-score {
+                  position: absolute; top: 10px; right: 10px;
+                  font-size: 11px; font-weight: 700;
+                  font-family: var(--font-head);
+            }
+            .vc-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; padding-right: 40px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .vc-url   { font-size: 10px; color: var(--muted); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .vc-meta  { display: flex; gap: 8px; flex-wrap: wrap; }
+            .vc-tag   { font-size: 10px; padding: 1px 6px; border-radius: 2px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+            .vc-tag.hi { border-color: var(--accent); color: var(--accent); }
+            .vc-tag.warn { border-color: var(--warn); color: var(--warn); }
+            .vc-tag.danger { border-color: var(--danger); color: var(--danger); }
 
-        .nav-arrow {
-            text-align: center; color: var(--border); font-size: 18px;
-            margin: 2px 0; user-select: none;
-        }
-        .section-label {
-            font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
-            color: var(--muted); margin: 10px 0 6px;
-        }
+            .nav-arrow {
+                  text-align: center; color: var(--border); font-size: 18px;
+                  margin: 2px 0; user-select: none;
+            }
+            .section-label {
+                  font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+                  color: var(--muted); margin: 10px 0 6px;
+            }
 
-        /* ── Stats row ── */
-        .stats-row {
-            display: flex; gap: 1px;
-            border-top: 1px solid var(--border);
-            flex-shrink: 0;
-        }
-        .stat-box {
-            flex: 1; padding: 8px 12px;
-            background: var(--surface2);
-            text-align: center;
-        }
-        .stat-val { font-family: var(--font-head); font-size: 16px; font-weight: 800; color: var(--accent); }
-        .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+            /* ── Stats row ── */
+            .stats-row {
+                  display: flex; gap: 1px;
+                  border-top: 1px solid var(--border);
+                  flex-shrink: 0;
+            }
+            .stat-box {
+                  flex: 1; padding: 8px 12px;
+                  background: var(--surface2);
+                  text-align: center;
+            }
+            .stat-val { font-family: var(--font-head); font-size: 16px; font-weight: 800; color: var(--accent); }
+            .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
-        .empty-state {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100%; color: var(--muted); gap: 8px;
-        }
-        .empty-icon { font-size: 32px; }
-        .empty-text { font-size: 11px; text-align: center; line-height: 1.6; }
+            .empty-state {
+                  display: flex; flex-direction: column; align-items: center; justify-content: center;
+                  height: 100%; color: var(--muted); gap: 8px;
+            }
+            .empty-icon { font-size: 32px; }
+            .empty-text { font-size: 11px; text-align: center; line-height: 1.6; }
 
-        /* ── Plotly overrides ── */
-        .js-plotly-plot .plotly { background: transparent !important; }
-        .modebar { display: none !important; }
-    </style>
-</head>
-<body>
-    <div id="root">
-        {%app_entry%}
-    </div>
-    <footer>
-        {%config%}
-        {%scripts%}
-        {%renderer%}
-    </footer>
+            /* ── Plotly overrides ── */
+            .js-plotly-plot .plotly { background: transparent !important; }
+            .modebar { display: none !important; }
+      </style>
+      </head>
+      <body>
+      <div id="root">
+            {%app_entry%}
+      </div>
+      <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+      </footer>
 </body>
 </html>
 '''
@@ -290,7 +267,7 @@ app.layout = html.Div(id="root", children=[
             dcc.Dropdown(
                   id="session-filter",
                   options=[{"label": f"All sessions", "value": -1}] +
-                          [{"label": f"Session {s}", "value": s} for s in sorted(df["session_id"].unique())],
+                        [{"label": f"Session {s}", "value": s} for s in sorted(df["session_id"].unique())],
                   value=-1,
                   clearable=False,
                   style={"width": "160px", "fontSize": "12px"},
@@ -308,7 +285,7 @@ app.layout = html.Div(id="root", children=[
                   ]),
                   html.Div(className="panel-body", children=[
                         dcc.Graph(id="timeline-graph", style={"height": "100%"},
-                                  config={"displayModeBar": False}),
+                              config={"displayModeBar": False}),
                   ]),
             ]),
 
@@ -335,7 +312,7 @@ app.layout = html.Div(id="root", children=[
                   ]),
                   html.Div(className="panel-body", children=[
                         dcc.Graph(id="nav-graph", style={"height": "100%"},
-                                  config={"displayModeBar": False}),
+                              config={"displayModeBar": False}),
                   ]),
             ]),
       ]),
@@ -354,7 +331,7 @@ def filter_df(intent_thresh, session_id):
 
 def make_visit_card(row, role="active"):
       score = row["intent_score"]
-      col   = intent_color(score)
+      col   = score_to_color(score)
       dur   = row["duration"]
       dur_s = f"{dur:.1f}s" if dur < 60 else f"{dur/60:.1f}m"
 
@@ -385,8 +362,6 @@ def make_visit_card(row, role="active"):
                   html.Div(className="vc-meta", children=tags),
             ])
 
-
-# ── Callbacks ──────────────────────────────────────────────────────────────────
 
 @app.callback(
       Output("timeline-graph", "figure"),
@@ -444,7 +419,7 @@ def update_timeline(thresh, session_id):
             margin=dict(l=40, r=16, t=16, b=40),
             xaxis=dict(gridcolor="#1a1c28", zeroline=False, showline=False),
             yaxis=dict(gridcolor="#1a1c28", zeroline=True, zerolinecolor="#2a2d3e",
-                       range=[-16, 16], title="intent score"),
+                  range=[-16, 16], title="intent score"),
             hovermode="closest",
             clickmode="event",
       )
@@ -458,6 +433,8 @@ def update_timeline(thresh, session_id):
       Input("session-filter",   "value"),
       Input("selected-visit-id", "data"),
 )
+
+
 def update_nav_graph(thresh, session_id, selected_id):
       d = filter_df(thresh, session_id)
       if d.empty:
@@ -470,8 +447,8 @@ def update_nav_graph(thresh, session_id, selected_id):
       G = nx.DiGraph()
       for _, row in d_top.iterrows():
             G.add_node(row["visit_id"],
-                       title=row["title"], score=row["intent_score"],
-                       url=row["url"], time=row["visit_time"])
+                        title=row["title"], score=row["intent_score"],
+                        url=row["url"], time=row["visit_time"])
             if row["from_visit_id"] in id_set:
                   G.add_edge(row["from_visit_id"], row["visit_id"], etype="nav")
             if row["opener_visit_id"] in id_set:
@@ -635,3 +612,4 @@ def update_drilldown(visit_id):
 if __name__ == "__main__":
       print(f"Dashboard ready → http://127.0.0.1:8050")
       app.run(debug=False, port=8050)
+      
