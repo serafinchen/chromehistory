@@ -1,6 +1,6 @@
 import plotly.graph_objects as go
 import networkx as nx
-from analytics import intent_color_vec
+from app.analytics import intent_color_vec
 
 
 def build_nav_graph(G, selected_id=None):
