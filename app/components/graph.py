@@ -1,10 +1,9 @@
-from ccl_chromium_reader import ChromiumProfileFolder
 import networkx as nx
 from pyvis.network import Network
 import webbrowser
 import os
-from app.analytics import compute_intent_score, score_to_color
-from app.history import normalize, HistoryVisit
+from app.analytics import intent_color
+from app.history import HistoryVisit
       
 def build_chrome_history_graph(visits: list[HistoryVisit], limit=200) -> nx.DiGraph:
       G = nx.DiGraph()
@@ -67,7 +66,7 @@ def plot_history_pyvis(G: nx.DiGraph, output_file: str = "chrome_history.html") 
                   label=title[:30] if title else str(n),
                   title=tooltip,
                   size=10 + abs(score) * 2,
-                  color = score_to_color(score)
+                  color = intent_color(score)
             )
 
       #Edges
@@ -78,7 +77,7 @@ def plot_history_pyvis(G: nx.DiGraph, output_file: str = "chrome_history.html") 
             edge_score = (u_score + v_score) / 2
 
 
-            color = score_to_color(edge_score)
+            color = intent_color(edge_score)
             width = max(1, abs(edge_score))
 
             net.add_edge(

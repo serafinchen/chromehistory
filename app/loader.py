@@ -3,14 +3,8 @@ from urllib.parse import urlparse
 from app.helpers import normalize_url
 import pathlib
 from typing import Optional
-from history import PROFILE_PATH
+from app.history import PROFILE_PATH
 import shutil
-import pathlib
-from typing import Optional
-from ccl_chromium_reader import ChromiumProfileFolder
-from ccl_chromium_reader import ccl_chromium_cache
-from app.helpers import normalize_url
-
 
 HISTORY_FILE = PROFILE_PATH / "History"
 TEMP_DB = "history_copy.db"
@@ -36,6 +30,8 @@ def build_cache_domain_index(cache_data: dict[str, dict]) -> dict[str, list[dict
                   domain_index[domain].append(entry)
             except Exception:
                   continue
+
+      return domain_index
 
 
 def load_cache(cache_path: pathlib.Path) -> dict[str, dict]:
