@@ -1,5 +1,9 @@
+import networkx as nx
 import datetime
 from urllib.parse import urlparse
+
+
+SESSION_GAP = 30 * 60
 
 #HOW DID THE VISIT TOOK PLACE
 TRANSITIONS = {
@@ -62,35 +66,30 @@ def decode_qualifier(value: int) -> list[str]:
 
       return result 
 
-def score_to_color(score):
+def add_sessions(df):
+      session_ids = [0]
 
-      if score >= 10:
-            return "#1abc9c"
-      elif score >= 5:
-            return "#2ecc71"
-      elif score >= 2:
-            return "#f1c40f"
-      elif score >= 0:
-            return "#95a5a6"
-      elif score >= -5:
-            return "#e67e22"
-      else:
-            return "#e74c3c"
-      
-def chrome_time_to_datetime(chrome_time):
-      if isinstance(chrome_time, datetime.datetime):
-            return chrome_time
-      return datetime.datetime(1601, 1, 1) + datetime.timedelta(microseconds=chrome_time)
+      for i in range(1, len(df)):
+            gap = (
+                  df.loc[i, "visit_time_dt"]
+                  - df.loc[i-1, "visit_time_dt"]
+            ).total_seconds()
+
+            session_ids.append(
+                  session_ids[-1] + (1 if gap > SESSION_GAP else 0)
+            )
+
+      df["session_id"] = session_ids
+      return df
+
+def intent_color(score):
+      if score >= 10:  return "#00ff9d"
+      if score >= 5:   return "#7fff7f"
+      if score >= 2:   return "#ffd700"
+      if score >= 0:   return "#888ea8"
+      if score >= -5:  return "#ff8c42"
+      return "#ff3d5a"
 
 
-def normalize_url(url):
-      try:
-            parsed = urlparse(url)
-            return (
-                  f"{parsed.scheme}://{parsed.netloc}"
-                  f"{parsed.path}"
-                  f"?{parsed.query}"
-            ).rstrip("/")
-      except Exception:
-            return url
-      
+def intent_color_vec(scores):
+      return [intent_color(s) for s in scores]

@@ -10,7 +10,7 @@ from dataclasses import asdict
 
 # ── Import your existing modules ──────────────────────────────────────────────
 from history import load_history, load_cache, normalize, PROFILE_PATH, CACHE_PATHS
-from helpers import score_to_color
+from app.helpers import score_to_color
 
 # ── Load data ─────────────────────────────────────────────────────────────────
 print("Loading history...")
@@ -612,4 +612,3 @@ def update_drilldown(visit_id):
 if __name__ == "__main__":
       print(f"Dashboard ready → http://127.0.0.1:8050")
       app.run(debug=False, port=8050)
-      

@@ -1,4 +1,4 @@
-from helpers import decode_core, decode_qualifier
+from app.helpers import decode_core, decode_qualifier
 import math
 
 
@@ -40,9 +40,6 @@ QUALIFIER_WEIGHTS = {
       "RELOAD": -2.0,
       "RELOAD_BYPASSING_CACHE": -1.0,
 }
-
-
-
 
 def compute_intent_score(h):
       score = 0.0
