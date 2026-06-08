@@ -3,9 +3,8 @@ import networkx as nx
 from pyvis.network import Network
 import webbrowser
 import os
-from app.helpers import score_to_color
-from app.intent import compute_intent_score
-from history import normalize, HistoryVisit
+from app.analytics import compute_intent_score, score_to_color
+from app.history import normalize, HistoryVisit
       
 def build_chrome_history_graph(visits: list[HistoryVisit], limit=200) -> nx.DiGraph:
       G = nx.DiGraph()

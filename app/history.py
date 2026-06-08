@@ -4,8 +4,8 @@ import pathlib
 from typing import Optional
 from ccl_chromium_reader import ChromiumProfileFolder
 from ccl_chromium_reader import ccl_chromium_cache
-from app.helpers import decode_core, decode_qualifier, chrome_time_to_datetime, normalize_url
-from analytics import compute_intent_score
+from app.analytics import decode_core, decode_qualifier, compute_intent_score
+from app.helpers import chrome_time_to_datetime, normalize_url
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
