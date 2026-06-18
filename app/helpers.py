@@ -1,7 +1,5 @@
 import datetime
 from urllib.parse import urlparse
-
-
       
 def chrome_time_to_datetime(chrome_time):
       if isinstance(chrome_time, datetime.datetime):

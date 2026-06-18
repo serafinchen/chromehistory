@@ -3,8 +3,10 @@ import plotly.graph_objects as go
 
 from app.analytics import intent_color_vec
 
+MAX_GRAPH_NODES = 300
 
-def build_visit_graph(df, limit=300):
+
+def build_visit_graph(df, limit=MAX_GRAPH_NODES):
       graph = nx.DiGraph()
       top = df.nlargest(min(limit, len(df)), "intent_score")
       id_set = set(top["visit_id"])

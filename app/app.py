@@ -1,13 +1,11 @@
 from pathlib import Path
 import sys
+from dash import Dash
+import dash
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
       sys.path.insert(0, str(ROOT))
-
-from dash import Dash
-import dash
-
 
 app = Dash(
       __name__,

@@ -22,8 +22,8 @@ def load_df():
       return df.sort_values("visit_time_dt").reset_index(drop=True)
 
 
-def filter_visits(df, intent_thresh, session_id):
-      filtered = df[df["intent_score"] >= intent_thresh]
+def filter_visits(df, session_id):
+      filtered = df
       if session_id != -1:
             filtered = filtered[filtered["session_id"] == session_id]
       return filtered

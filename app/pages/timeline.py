@@ -11,12 +11,13 @@ dash.register_page(__name__, path="/")
 
 df = load_df()
 summary = dashboard_summary(df)
+last_session_id = int(df["session_id"].max()) if not df.empty else -1
 
 
 layout = html.Div(id="root", children=[
       html.Div(className="header", children=[
             html.Div(className="header-title", children=[
-                  "HISTORY", html.Span(" INTELLIGENCE")
+                  "CHROME", html.Span(" HISTORY")
             ]),
             html.Div(className="header-meta", children=[
                   (
@@ -29,18 +30,6 @@ layout = html.Div(id="root", children=[
       ]),
 
       html.Div(className="controls", children=[
-            html.Span("Intent threshold", className="ctrl-label"),
-            dcc.Slider(
-                  id="intent-threshold",
-                  min=-15,
-                  max=15,
-                  step=0.5,
-                  value=-15,
-                  marks={-15: "-15", -5: "-5", 0: "0", 5: "5", 15: "15"},
-                  className="dash-slider",
-                  tooltip={"placement": "top"},
-                  updatemode="drag",
-            ),
             html.Span("Session", className="ctrl-label"),
             dcc.Dropdown(
                   id="session-filter",
@@ -49,7 +38,7 @@ layout = html.Div(id="root", children=[
                         {"label": f"Session {session}", "value": session}
                         for session in sorted(df["session_id"].unique())
                   ],
-                  value=-1,
+                  value=last_session_id,
                   clearable=False,
                   style={"width": "160px", "fontSize": "12px"},
             ),
@@ -105,11 +94,10 @@ layout = html.Div(id="root", children=[
 @callback(
       Output("timeline-graph", "figure"),
       Output("timeline-badge", "children"),
-      Input("intent-threshold", "value"),
       Input("session-filter", "value"),
 )
-def update_timeline(thresh, session_id):
-      filtered = filter_visits(df, thresh, session_id)
+def update_timeline(session_id):
+      filtered = filter_visits(df, session_id)
       if filtered.empty:
             return go.Figure(), "0 visits"
 
@@ -119,12 +107,11 @@ def update_timeline(thresh, session_id):
 @callback(
       Output("nav-graph", "figure"),
       Output("graph-badge", "children"),
-      Input("intent-threshold", "value"),
       Input("session-filter", "value"),
       Input("selected-visit-id", "data"),
 )
-def update_nav_graph(thresh, session_id, selected_id):
-      filtered = filter_visits(df, thresh, session_id)
+def update_nav_graph(session_id, selected_id):
+      filtered = filter_visits(df, session_id)
       if filtered.empty:
             return go.Figure(), "0 nodes"
 

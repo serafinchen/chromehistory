@@ -3,6 +3,19 @@ from dash import html
 from app.analytics import intent_color
 
 
+def transition_tags(row):
+      transition_core = row["transition_core"]
+      if isinstance(transition_core, list) and transition_core:
+            return transition_core[:2]
+      if isinstance(transition_core, str) and transition_core:
+            return [transition_core]
+      if row.get("opener_visit_id"):
+            return ["OPENED_TAB"]
+      if row.get("from_visit_id"):
+            return ["LINK"]
+      return ["DIRECT"]
+
+
 def make_visit_card(row, role="active"):
       score = row["intent_score"]
       color = intent_color(score)
@@ -10,12 +23,8 @@ def make_visit_card(row, role="active"):
       duration_label = f"{duration:.1f}s" if duration < 60 else f"{duration / 60:.1f}m"
 
       tags = []
-      transition_core = row["transition_core"]
-      if isinstance(transition_core, list) and transition_core:
-            for transition in transition_core[:2]:
-                  tags.append(html.Span(transition, className="vc-tag hi"))
-      elif isinstance(transition_core, str) and transition_core:
-            tags.append(html.Span(transition_core, className="vc-tag hi"))
+      for transition in transition_tags(row):
+            tags.append(html.Span(transition, className="vc-tag hi"))
 
       if row.get("is_no_store"):
             tags.append(html.Span("NO-STORE", className="vc-tag warn"))
