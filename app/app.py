@@ -1,3 +1,10 @@
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+      sys.path.insert(0, str(ROOT))
+
 from dash import Dash
 import dash
 
@@ -14,5 +21,5 @@ server = app.server
 app.layout = dash.page_container
 
 if __name__ == "__main__":
-      app.run(debug=True)
+      app.run(debug=False, port=8050)
       

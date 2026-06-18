@@ -1,4 +1,4 @@
-from ccl_chromium_reader import ChromiumProfileFolder, ccl_chromium_cache
+from ccl_chromium_reader import ChromiumProfileFolder, ccl_chromium_cache, ccl_chromium_history
 from urllib.parse import urlparse
 from app.helpers import normalize_url
 import pathlib
@@ -11,8 +11,17 @@ TEMP_DB = "history_copy.db"
 
 
 def load_history(profile_path):
-      with ChromiumProfileFolder(profile_path) as profile:
-            history = list(profile.iterate_history_records())
+      history_file = pathlib.Path(profile_path) / "History"
+      temp_db = pathlib.Path(TEMP_DB)
+
+      try:
+            shutil.copy2(history_file, temp_db)
+            db_path = temp_db
+      except OSError:
+            db_path = temp_db if temp_db.exists() else history_file
+
+      with ccl_chromium_history.HistoryDatabase(db_path) as history_db:
+            history = list(history_db.iter_history_records(None))
       return history
 
 def copy_history_db():

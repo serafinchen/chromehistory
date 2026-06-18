@@ -1,68 +1,30 @@
 import dash
-from dash import dcc, html, Input, Output, callback, callback_context
 import plotly.graph_objects as go
-import pandas as pd
-import networkx as nx
-from urllib.parse import urlparse
+from dash import Input, Output, callback, callback_context, dcc, html
 
-from app.data import load_df
-from app.analytics import intent_color, intent_color_vec
+from app.components.drilldown import build_drilldown, empty_drilldown
+from app.components.nav_graph import build_nav_graph, build_visit_graph
+from app.components.timeline import build_timeline_figure
+from app.data import dashboard_summary, filter_visits, load_df
 
 dash.register_page(__name__, path="/")
 
 df = load_df()
-df["domain"] = df["url"].apply(lambda u: urlparse(u).netloc)
-df["duration"] = df["visit_duration_seconds"]
-
-def filter_df(intent_thresh, session_id):
-      d = df[df["intent_score"] >= intent_thresh]
-      if session_id != -1:
-            d = d[d["session_id"] == session_id]
-      return d
-
-
-def make_visit_card(row, role="active"):
-      score = row["intent_score"]
-      col   = intent_color(score)
-      dur   = row["duration"]
-      dur_s = f"{dur:.1f}s" if dur < 60 else f"{dur / 60:.1f}m"
-
-      tags = []
-      tc = row["transition_core"]
-      if isinstance(tc, list) and tc:
-            for t in tc[:2]:
-                  tags.append(html.Span(t, className="vc-tag hi"))
-      elif isinstance(tc, str) and tc:
-            tags.append(html.Span(tc, className="vc-tag hi"))
-
-      if row.get("is_no_store"):
-            tags.append(html.Span("NO-STORE", className="vc-tag warn"))
-      if row.get("is_personalized"):
-            tags.append(html.Span("AUTH", className="vc-tag warn"))
-      rc = row.get("response_code")
-      if rc and rc not in (200, 304, None):
-            tags.append(html.Span(f"HTTP {rc}", className="vc-tag danger"))
-      tags.append(html.Span(dur_s, className="vc-tag"))
-      tags.append(html.Span(row["visit_time"][11:19], className="vc-tag"))
-
-      return html.Div(className=f"visit-card {role}",
-            id={"type": "visit-card", "index": int(row["visit_id"])},
-            children=[
-                  html.Div(f"{score:+.1f}", className="vc-score", style={"color": col}),
-                  html.Div(row["title"][:60], className="vc-title"),
-                  html.Div(row["url"][:70],  className="vc-url"),
-                  html.Div(className="vc-meta", children=tags),
-            ])
+summary = dashboard_summary(df)
 
 
 layout = html.Div(id="root", children=[
-
       html.Div(className="header", children=[
             html.Div(className="header-title", children=[
                   "HISTORY", html.Span(" INTELLIGENCE")
             ]),
             html.Div(className="header-meta", children=[
-                  f"{len(df)} visits · {df['session_id'].nunique()} sessions · {len(df[df['intent_score'] >= 5])} high-intent · {len(df[(df['is_no_store'] == True) | (df['response_code'].isin([403, 404, 500]))])} anomalies"
+                  (
+                        f"{summary['total_visits']} visits - "
+                        f"{summary['total_sessions']} sessions - "
+                        f"{summary['high_intent']} high-intent - "
+                        f"{summary['anomalies']} anomalies"
+                  )
             ]),
       ]),
 
@@ -70,7 +32,10 @@ layout = html.Div(id="root", children=[
             html.Span("Intent threshold", className="ctrl-label"),
             dcc.Slider(
                   id="intent-threshold",
-                  min=-15, max=15, step=0.5, value=-15,
+                  min=-15,
+                  max=15,
+                  step=0.5,
+                  value=-15,
                   marks={-15: "-15", -5: "-5", 0: "0", 5: "5", 15: "15"},
                   className="dash-slider",
                   tooltip={"placement": "top"},
@@ -79,8 +44,11 @@ layout = html.Div(id="root", children=[
             html.Span("Session", className="ctrl-label"),
             dcc.Dropdown(
                   id="session-filter",
-                  options=[{"label": "All sessions", "value": -1}] +
-                        [{"label": f"Session {s}", "value": s} for s in sorted(df["session_id"].unique())],
+                  options=[{"label": "All sessions", "value": -1}]
+                  + [
+                        {"label": f"Session {session}", "value": session}
+                        for session in sorted(df["session_id"].unique())
+                  ],
                   value=-1,
                   clearable=False,
                   style={"width": "160px", "fontSize": "12px"},
@@ -94,7 +62,11 @@ layout = html.Div(id="root", children=[
                         html.Span(id="timeline-badge", className="panel-badge"),
                   ]),
                   html.Div(className="panel-body", children=[
-                        dcc.Graph(id="timeline-graph", style={"height": "100%"}, config={"displayModeBar": False}),
+                        dcc.Graph(
+                              id="timeline-graph",
+                              style={"height": "100%"},
+                              config={"displayModeBar": False},
+                        ),
                   ]),
             ]),
 
@@ -103,12 +75,11 @@ layout = html.Div(id="root", children=[
                         html.Span("DRILL-DOWN", className="panel-title"),
                         html.Span("click a node", className="panel-badge", id="drilldown-badge"),
                   ]),
-                  html.Div(className="drilldown-body", id="drilldown-content", children=[
-                        html.Div(className="empty-state", children=[
-                              html.Div("◎", className="empty-icon"),
-                              html.Div("Click any point in the timeline\nor graph to inspect the navigation chain.", className="empty-text"),
-                        ])
-                  ]),
+                  html.Div(
+                        className="drilldown-body",
+                        id="drilldown-content",
+                        children=[empty_drilldown()],
+                  ),
                   html.Div(className="stats-row", id="drilldown-stats"),
             ]),
 
@@ -118,7 +89,11 @@ layout = html.Div(id="root", children=[
                         html.Span(id="graph-badge", className="panel-badge"),
                   ]),
                   html.Div(className="panel-body", children=[
-                        dcc.Graph(id="nav-graph", style={"height": "100%"}, config={"displayModeBar": False}),
+                        dcc.Graph(
+                              id="nav-graph",
+                              style={"height": "100%"},
+                              config={"displayModeBar": False},
+                        ),
                   ]),
             ]),
       ]),
@@ -131,228 +106,63 @@ layout = html.Div(id="root", children=[
       Output("timeline-graph", "figure"),
       Output("timeline-badge", "children"),
       Input("intent-threshold", "value"),
-      Input("session-filter",   "value"),
+      Input("session-filter", "value"),
 )
 def update_timeline(thresh, session_id):
-      d = filter_df(thresh, session_id)
-      if d.empty:
+      filtered = filter_visits(df, thresh, session_id)
+      if filtered.empty:
             return go.Figure(), "0 visits"
 
-      colors = intent_color_vec(d["intent_score"])
-      sizes = (d["duration"].clip(0, 300) / 300 * 18 + 5).tolist()
-
-      hover = [
-            f"<b>{row['title'][:50]}</b><br>"
-            f"{row['url'][:60]}<br>"
-            f"Score: {row['intent_score']:+.2f} | {row['duration']:.1f}s<br>"
-            f"Session {row['session_id']}"
-            for _, row in d.iterrows()
-      ]
-
-      fig = go.Figure()
-      fig.add_trace(go.Scatter(
-            x=d["visit_time_dt"],
-            y=d["intent_score"],
-            mode="markers+lines",
-            marker=dict(color=colors, size=sizes, line=dict(width=0)),
-            line=dict(color="#1f2130", width=1),
-            hovertext=hover,
-            hoverinfo="text",
-            customdata=d["visit_id"].tolist(),
-      ))
-
-      anomaly_mask = (d["is_no_store"] == True) | (d["response_code"].isin([403, 404, 500]))
-      da = d[anomaly_mask]
-      if not da.empty:
-            fig.add_trace(go.Scatter(
-                  x=da["visit_time_dt"],
-                  y=da["intent_score"],
-                  mode="markers",
-                  marker=dict(color="#ff3d5a", size=14, symbol="diamond", line=dict(color="#ff3d5a", width=2)),
-                  hoverinfo="skip",
-                  name="anomaly",
-            ))
-
-      fig.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(family="Space Mono", color="#555878", size=10),
-            showlegend=False,
-            margin=dict(l=40, r=16, t=16, b=40),
-            xaxis=dict(gridcolor="#1a1c28", zeroline=False, showline=False),
-            yaxis=dict(gridcolor="#1a1c28", zeroline=True, zerolinecolor="#2a2d3e", range=[-16, 16], title="intent score"),
-            hovermode="closest",
-            clickmode="event",
-      )
-      return fig, f"{len(d)} visits"
+      return build_timeline_figure(filtered), f"{len(filtered)} visits"
 
 
 @callback(
       Output("nav-graph", "figure"),
       Output("graph-badge", "children"),
       Input("intent-threshold", "value"),
-      Input("session-filter",   "value"),
+      Input("session-filter", "value"),
       Input("selected-visit-id", "data"),
 )
 def update_nav_graph(thresh, session_id, selected_id):
-      d = filter_df(thresh, session_id)
-      if d.empty:
+      filtered = filter_visits(df, thresh, session_id)
+      if filtered.empty:
             return go.Figure(), "0 nodes"
 
-      limit = min(300, len(d))
-      d_top = d.nlargest(limit, "intent_score")
-      id_set = set(d_top["visit_id"])
-
-      G = nx.DiGraph()
-      for _, row in d_top.iterrows():
-            G.add_node(row["visit_id"], title=row["title"], score=row["intent_score"], url=row["url"], time=row["visit_time"])
-            if row["from_visit_id"] in id_set:
-                  G.add_edge(row["from_visit_id"], row["visit_id"], etype="nav")
-            if row["opener_visit_id"] in id_set:
-                  G.add_edge(row["opener_visit_id"], row["visit_id"], etype="tab")
-
-      if len(G.nodes) == 0:
+      graph, _ = build_visit_graph(filtered)
+      if len(graph.nodes) == 0:
             return go.Figure(), "0 nodes"
 
-      pos = nx.spring_layout(G, k=2.5, iterations=40, seed=42)
-      edge_x, edge_y = [], []
-      for u, v in G.edges():
-            x0, y0 = pos[u]; x1, y1 = pos[v]
-            edge_x += [x0, x1, None]; edge_y += [y0, y1, None]
-
-      node_ids = list(G.nodes())
-      node_scores = [G.nodes[n]["score"] for n in node_ids]
-      node_colors = intent_color_vec(node_scores)
-      node_sizes = [8 + abs(s) * 1.5 for s in node_scores]
-
-      if selected_id and selected_id in id_set:
-            node_sizes = [s * 2.2 if nid == selected_id else s for nid, s in zip(node_ids, node_sizes)]
-            node_colors = ["#ffffff" if nid == selected_id else c for nid, c in zip(node_ids, node_colors)]
-
-      hover = [
-            f"<b>{G.nodes[n]['title'][:40]}</b><br>Score: {G.nodes[n]['score']:+.2f}"
-            for n in node_ids
-      ]
-
-      fig = go.Figure()
-      fig.add_trace(go.Scatter(x=edge_x, y=edge_y, mode="lines", line=dict(color="#1f2130", width=1), hoverinfo="none"))
-      fig.add_trace(go.Scatter(
-            x=[pos[n][0] for n in node_ids],
-            y=[pos[n][1] for n in node_ids],
-            mode="markers",
-            marker=dict(color=node_colors, size=node_sizes, line=dict(width=0)),
-            hovertext=hover,
-            hoverinfo="text",
-            customdata=node_ids,
-      ))
-      fig.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(family="Space Mono", color="#555878", size=10),
-            showlegend=False,
-            margin=dict(l=8, r=8, t=8, b=8),
-            xaxis=dict(visible=False),
-            yaxis=dict(visible=False),
-            hovermode="closest",
-            clickmode="event",
-      )
-      return fig, f"{len(G.nodes)} nodes · {len(G.edges)} edges"
+      return build_nav_graph(filtered, selected_id), f"{len(graph.nodes)} nodes - {len(graph.edges)} edges"
 
 
 @callback(
       Output("selected-visit-id", "data"),
       Input("timeline-graph", "clickData"),
-      Input("nav-graph",      "clickData"),
+      Input("nav-graph", "clickData"),
 )
-def store_selected(tl_click, ng_click):
+def store_selected(timeline_click, graph_click):
       ctx = callback_context
       if not ctx.triggered:
             return None
+
       trigger = ctx.triggered[0]["prop_id"]
-      click = tl_click if "timeline" in trigger else ng_click
+      click = timeline_click if "timeline" in trigger else graph_click
       if not click:
             return None
-      pts = click.get("points", [])
-      if not pts:
+
+      points = click.get("points", [])
+      if not points:
             return None
-      cd = pts[0].get("customdata")
-      return int(cd) if cd is not None else None
+
+      customdata = points[0].get("customdata")
+      return int(customdata) if customdata is not None else None
 
 
 @callback(
       Output("drilldown-content", "children"),
-      Output("drilldown-stats",   "children"),
-      Output("drilldown-badge",   "children"),
-      Input("selected-visit-id",  "data"),
+      Output("drilldown-stats", "children"),
+      Output("drilldown-badge", "children"),
+      Input("selected-visit-id", "data"),
 )
 def update_drilldown(visit_id):
-      if visit_id is None:
-            empty = html.Div(className="empty-state", children=[
-                  html.Div("◎", className="empty-icon"),
-                  html.Div("Click any point in the timeline\nor graph to inspect the navigation chain.", className="empty-text"),
-            ])
-            return empty, [], "click a node"
-
-      row_q = df[df["visit_id"] == visit_id]
-      if row_q.empty:
-            return html.Div("Visit not found"), [], "—"
-
-      row = row_q.iloc[0]
-
-      ancestors = []
-      cur = row
-      for _ in range(5):
-            pid = cur["from_visit_id"] or cur["opener_visit_id"]
-            if not pid or pid == 0:
-                  break
-            par = df[df["visit_id"] == pid]
-            if par.empty:
-                  break
-            ancestors.insert(0, par.iloc[0])
-            cur = par.iloc[0]
-
-      children_from = df[df["from_visit_id"] == visit_id]
-      children_opener = df[df["opener_visit_id"] == visit_id]
-      children = pd.concat([children_from, children_opener]).drop_duplicates("visit_id")
-      children = children.sort_values("visit_time").head(8)
-
-      content = []
-      if ancestors:
-            content.append(html.Div("↑ ancestors", className="section-label"))
-            for anc in ancestors:
-                  content.append(make_visit_card(anc, "ancestor"))
-                  content.append(html.Div("↓", className="nav-arrow"))
-
-      content.append(html.Div("● selected", className="section-label"))
-      content.append(make_visit_card(row, "active"))
-
-      if not children.empty:
-            content.append(html.Div("↓ children", className="section-label"))
-            for _, child in children.iterrows():
-                  content.append(html.Div("↓", className="nav-arrow"))
-                  content.append(make_visit_card(child, "child"))
-
-      score = row["intent_score"]
-      dur = row["duration"]
-      sess = row["session_id"]
-      stats = html.Div(className="stats-row", children=[
-            html.Div(className="stat-box", children=[
-                  html.Div(f"{score:+.1f}", className="stat-val", style={"color": intent_color(score)}),
-                  html.Div("INTENT", className="stat-lbl"),
-            ]),
-            html.Div(className="stat-box", children=[
-                  html.Div(f"{dur:.0f}s" if dur < 60 else f"{dur/60:.1f}m", className="stat-val"),
-                  html.Div("DURATION", className="stat-lbl"),
-            ]),
-            html.Div(className="stat-box", children=[
-                  html.Div(f"S{sess}", className="stat-val"),
-                  html.Div("SESSION", className="stat-lbl"),
-            ]),
-            html.Div(className="stat-box", children=[
-                  html.Div(str(len(children)), className="stat-val"),
-                  html.Div("CHILDREN", className="stat-lbl"),
-            ]),
-      ])
-
-      badge = f"visit {visit_id}"
-      return content, stats, badge
+      return build_drilldown(df, visit_id)
