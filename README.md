@@ -18,3 +18,5 @@ pip install git+https://github.com/cclgroupltd/ccl_chromium_reader.git
 pip install scipy
 
 pip install pyvis
+
+pip install dash
