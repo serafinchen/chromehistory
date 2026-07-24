@@ -30,26 +30,6 @@ def build_timeline_figure(df):
             customdata=df["visit_id"].tolist(),
       ))
 
-      anomaly_mask = (
-            (df["is_no_store"] == True)
-            | (df["response_code"].isin([403, 404, 500]))
-      )
-      anomalies = df[anomaly_mask]
-      if not anomalies.empty:
-            fig.add_trace(go.Scatter(
-                  x=anomalies["visit_time_dt"],
-                  y=anomalies["intent_score"],
-                  mode="markers",
-                  marker=dict(
-                        color="#ff3d5a",
-                        size=14,
-                        symbol="diamond",
-                        line=dict(color="#ff3d5a", width=2),
-                  ),
-                  hoverinfo="skip",
-                  name="anomaly",
-            ))
-
       fig.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",

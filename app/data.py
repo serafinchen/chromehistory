@@ -30,14 +30,9 @@ def filter_visits(df, session_id):
 
 
 def dashboard_summary(df):
-      anomalies = df[
-            (df["is_no_store"] == True)
-            | (df["response_code"].isin([403, 404, 500]))
-      ]
 
       return {
             "total_visits": len(df),
             "total_sessions": df["session_id"].nunique(),
-            "high_intent": len(df[df["intent_score"] >= 5]),
-            "anomalies": len(anomalies),
+            "high_intent": len(df[df["intent_score"] >= 5])
       }
