@@ -47,17 +47,15 @@ app = dash.Dash(__name__, title="History Analyser")
 total_visits  = len(df)
 total_sessions= df["session_id"].nunique()
 high_intent   = len(df[df["intent_score"] >= 5])
-anomalies     = len(df[(df["is_no_store"] == True) | (df["response_code"].isin([403, 404, 500]))])
 
 app.layout = html.Div(id="root", children=[
-
       # Header
       html.Div(className="header", children=[
             html.Div(className="header-title", children=[
                   "HISTORY", html.Span(" INTELLIGENCE")
             ]),
             html.Div(className="header-meta", children=[
-                  f"{total_visits} visits · {total_sessions} sessions · {high_intent} high-intent · {anomalies} anomalies"
+                  f"{total_visits} visits · {total_sessions} sessions · {high_intent} high-intent "
             ]),
       ]),
 
@@ -397,7 +395,7 @@ def update_drilldown(visit_id):
       sess  = row["session_id"]
       stats = html.Div(className="stats-row", children=[
             html.Div(className="stat-box", children=[
-                  html.Div(f"{score:+.1f}", className="stat-val", style={"color": intent_color(score)}),
+                  html.Div(f"{score:+.1f}", className="stat-val", style={"color": intent_color_vec(score)}),
                   html.Div("INTENT", className="stat-lbl"),
             ]),
             html.Div(className="stat-box", children=[

@@ -22,9 +22,7 @@ layout = html.Div(id="root", children=[
             html.Div(className="header-meta", children=[
                   (
                         f"{summary['total_visits']} visits - "
-                        f"{summary['total_sessions']} sessions - "
-                        f"{summary['high_intent']} high-intent - "
-                        f"{summary['anomalies']} anomalies"
+                        f"{summary['total_sessions']} sessions"
                   )
             ]),
       ]),
