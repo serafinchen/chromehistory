@@ -101,7 +101,6 @@ def make_visit_card(row, role="active"):
       tags.extend(
 
             [
-
                   html.Span(
                   duration,
                   className="vc-tag",

@@ -105,13 +105,6 @@ def build_drilldown(df, visit_id):
                   )
 
       content.append(
-            html.Div(
-                  "Selected Visit",
-                  className="section-label",
-            )
-      )
-
-      content.append(
             make_visit_card(
                   row,
                   "active",
@@ -119,13 +112,6 @@ def build_drilldown(df, visit_id):
       )
 
       if not children.empty:
-
-            content.append(
-                  html.Div(
-                  "Visited Next",
-                  className="section-label",
-                  )
-            )
 
             for _, child in children.iterrows():
 

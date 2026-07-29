@@ -1,26 +1,9 @@
 import dash
+from dash import ALL, Input, Output, State, callback, ctx, dcc, html
 
-from dash import (
-      Input,
-      Output,
-      State,
-      callback,
-      ctx,
-      dcc,
-      html,
-      ALL
-)
-
-from app.components.drilldown import (
-      build_drilldown,
-      empty_drilldown
-)
-
+from app.components.drilldown import build_drilldown, empty_drilldown
 from app.components.nav_graph import build_nav_graph
-from app.data import (
-      dashboard_summary,
-      load_df
-)
+from app.data import dashboard_summary, load_df
 
 dash.register_page(
       __name__,
