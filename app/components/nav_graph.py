@@ -3,8 +3,7 @@ import plotly.graph_objects as go
 
 from app.analytics import intent_color_vec
 
-MAX_GRAPH_NODES = 300
-
+MAX_GRAPH_NODES = 100
 
 def build_visit_graph(df, limit=MAX_GRAPH_NODES):
       graph = nx.DiGraph()
