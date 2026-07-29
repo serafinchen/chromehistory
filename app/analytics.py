@@ -167,3 +167,13 @@ def intent_color(score):
 
 def intent_color_vec(scores):
       return [intent_color(s) for s in scores]
+
+def visit_type_color(tags):
+    if "TYPED" in tags:
+        return "#ffcc00"
+    if "LINK" in tags:
+        return "#55aaff"
+    if "RELOAD" in tags:
+        return "#999999"
+    return "#777777"
+
