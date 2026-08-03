@@ -1,16 +1,62 @@
 import networkx as nx
+import pandas as pd
 import plotly.graph_objects as go
-import plotly.colors as pcolors
-import textwrap
+
 from app.analytics import decode_core, decode_qualifier, visit_type_color
+from app.components.nav_graph_style import (
+	ADDRESS_BAR_BORDER_WIDTH,
+	CACHED_SYMBOL_SUFFIX,
+	EDGE_STYLE,
+	ERROR_BORDER_COLOR,
+	ERROR_BORDER_WIDTH,
+	NORMAL_BORDER_WIDTH,
+	lane_color,
+	transition_symbol,
+)
 
 MAX_GRAPH_NODES = 100
 
-LANE_PALETTE = (
-	pcolors.qualitative.Set3
-	+ pcolors.qualitative.Pastel
-	+ pcolors.qualitative.Set2
-)
+
+def _parse_transition(row):
+	"""
+	Liest die Transition-Info aus der Zeile.
+
+	Bevorzugt die bereits dekodierten Felder aus HistoryVisit
+	(transition_core: str, transition_qualifier: "A|B|C"-String).
+	Fällt auf rohe Bitmasken (transition / transition_qualifiers als int)
+	zurück, falls die Zeile aus einer älteren/anderen Quelle stammt.
+	"""
+
+	core_val = row.get("transition_core")
+
+	if core_val not in (None, "") and not (isinstance(core_val, float) and pd.isna(core_val)):
+		core = str(core_val)
+
+		qual_raw = row.get("transition_qualifier", "") or ""
+
+		qualifiers = [q for q in str(qual_raw).split("|") if q]
+
+		return core, qualifiers
+
+	# Legacy-Fallback: rohe Transition-Bitmasken dekodieren
+	core_tags = decode_core(int(row.get("transition", 0)))
+	qualifiers = list(decode_qualifier(int(row.get("transition_qualifiers", 0))))
+
+	if isinstance(core_tags, (list, tuple)):
+		core = core_tags[0] if core_tags else "UNKNOWN"
+	else:
+		core = str(core_tags)
+
+	return core, qualifiers
+
+
+def _is_error_row(row):
+	code = row.get("response_code")
+
+	if code is None or (isinstance(code, float) and pd.isna(code)):
+		return False
+
+	return code >= 400
 
 
 def build_visit_graph(df, limit=MAX_GRAPH_NODES):
@@ -20,11 +66,14 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 	df = df.sort_values("visit_time_dt").copy()
 
 	if "duration_sec" not in df.columns:
-		df["duration_sec"] = (
-			df["visit_time_dt"].shift(-1) - df["visit_time_dt"]
-		).dt.total_seconds()
+		if "visit_duration_seconds" in df.columns:
+			df["duration_sec"] = df["visit_duration_seconds"]
+		else:
+			df["duration_sec"] = (
+				df["visit_time_dt"].shift(-1) - df["visit_time_dt"]
+			).dt.total_seconds()
 
-		df["duration_sec"] = df["duration_sec"].fillna(0).clip(0, 3600)
+			df["duration_sec"] = df["duration_sec"].fillna(0).clip(0, 3600)
 
 	if len(df) > limit:
 		df = df.tail(limit)
@@ -32,10 +81,9 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 	id_set = set(df["visit_id"])
 
 	for _, row in df.iterrows():
-		tags = [
-			*decode_core(int(row.get("transition", 0))),
-			*decode_qualifier(int(row.get("transition_qualifiers", 0))),
-		]
+		core, qualifiers = _parse_transition(row)
+
+		tags = [core, *qualifiers]
 
 		graph.add_node(
 			row["visit_id"],
@@ -46,6 +94,12 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 			time_dt=row["visit_time_dt"],
 			duration=row["duration_sec"],
 			tags=tags,
+			core=core,
+			qualifiers=qualifiers,
+			cached=bool(row.get("cached", False)),
+			is_error=_is_error_row(row),
+			response_code=row.get("response_code"),
+			content_type=row.get("content_type"),
 		)
 
 		if row["from_visit_id"] in id_set:
@@ -53,7 +107,6 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 				row["from_visit_id"],
 				row["visit_id"],
 				etype="nav",
-				tags=tags,
 			)
 
 		if row["opener_visit_id"] in id_set:
@@ -61,25 +114,25 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 				row["opener_visit_id"],
 				row["visit_id"],
 				etype="tab",
-				tags=tags,
 			)
 
 	return graph, id_set
 
 
-def _is_redirect(tags):
-	return any("REDIRECT" in str(t).upper() for t in tags)
-
-
-def _lane_color(lane_id):
-	return LANE_PALETTE[lane_id % len(LANE_PALETTE)]
-
-
 def _timeline_layout(graph):
+	"""
+	Zeitbasierter Layout.
+	X = echte Zeit
+	Y = Browsing-Spur (Lane)
+
+	Eine Lane wird fortgesetzt, solange eine nav-Kante (from_visit_id)
+	zu einem bereits bekannten Knoten existiert. Neue Tabs (opener_visit_id)
+	und komplett isolierte Knoten (kein Vorgänger) starten eine neue Lane.
+	"""
+
 	nodes = sorted(graph.nodes(), key=lambda n: graph.nodes[n]["time_dt"])
 
 	lane_of = {}
-	lane_origin = {}
 
 	pos = {}
 
@@ -97,29 +150,40 @@ def _timeline_layout(graph):
 		)
 
 		if nav_parent is not None:
-			if nav_parent in lane_of:
-				lane = lane_of[nav_parent]
-			else:
-				lane = next_lane
+			lane = lane_of[nav_parent] if nav_parent in lane_of else next_lane
+			if nav_parent not in lane_of:
 				next_lane += 1
-			origin = "continue"
 
 		elif tab_parent is not None:
 			lane = next_lane
 			next_lane += 1
-			origin = "tab"
 
 		else:
 			lane = next_lane
 			next_lane += 1
-			origin = "isolated"
 
 		lane_of[node] = lane
-		lane_origin[node] = origin
 
 		pos[node] = (graph.nodes[node]["time_dt"].timestamp(), -lane)
 
-	return pos, lane_of, lane_origin
+	return pos, lane_of
+
+
+def _classify_nav_edge(graph, target):
+	"""
+	Ordnet eine nav-Kante anhand der Qualifier des Ziel-Knotens einer
+	Kategorie zu: "redirect", "back_forward" oder "lane" (normale Navigation).
+	"""
+
+	qualifiers = [q.upper() for q in graph.nodes[target]["qualifiers"]]
+
+	if any("REDIRECT" in q for q in qualifiers):
+		return "redirect"
+
+	if any("FORWARD_BACK" in q for q in qualifiers):
+		return "back_forward"
+
+	return "lane"
 
 
 def build_nav_graph(df, selected_id=None):
@@ -129,30 +193,45 @@ def build_nav_graph(df, selected_id=None):
 	if len(graph.nodes) == 0:
 		return go.Figure()
 
-	pos, lane_of, lane_origin = _timeline_layout(graph)
+	pos, lane_of = _timeline_layout(graph)
 
 	fig = go.Figure()
+
+	# --- Kanten ---
+	# "lane"-Kanten: normale Navigation, eingefärbt nach ihrer Spur.
+	# "redirect": automatische Weiterleitung (Client/Server), unabhängig
+	#             von der Spurfarbe auffällig markiert.
+	# "back_forward": Nutzer ist über Zurück/Vorwärts gesprungen - keine
+	#                 "neue" Reise, sondern ein Sprung zu bekanntem Terrain.
+	# "tab": Seite wurde aus einem anderen Tab/Fenster heraus geöffnet.
+
 	nav_edges_by_lane = {}
 	redirect_x, redirect_y = [], []
+	back_forward_x, back_forward_y = [], []
 	tab_x, tab_y = [], []
 
 	for source, target, data in graph.edges(data=True):
 		x0, y0 = pos[source]
 		x1, y1 = pos[target]
-		tags = data.get("tags", [])
 
-		if data["etype"] == "nav":
-			if _is_redirect(tags):
-				redirect_x += [x0, x1, None]
-				redirect_y += [y0, y1, None]
-			else:
-				lane = lane_of[target]
-				bucket = nav_edges_by_lane.setdefault(lane, ([], []))
-				bucket[0].extend([x0, x1, None])
-				bucket[1].extend([y0, y1, None])
-		else:
+		if data["etype"] == "tab":
 			tab_x += [x0, x1, None]
 			tab_y += [y0, y1, None]
+			continue
+
+		kind = _classify_nav_edge(graph, target)
+
+		if kind == "redirect":
+			redirect_x += [x0, x1, None]
+			redirect_y += [y0, y1, None]
+		elif kind == "back_forward":
+			back_forward_x += [x0, x1, None]
+			back_forward_y += [y0, y1, None]
+		else:
+			lane = lane_of[target]
+			bucket = nav_edges_by_lane.setdefault(lane, ([], []))
+			bucket[0].extend([x0, x1, None])
+			bucket[1].extend([y0, y1, None])
 
 	for lane, (xs, ys) in nav_edges_by_lane.items():
 		fig.add_trace(
@@ -160,7 +239,7 @@ def build_nav_graph(df, selected_id=None):
 				x=xs,
 				y=ys,
 				mode="lines",
-				line=dict(color=_lane_color(lane), width=2),
+				line=dict(color=lane_color(lane), width=2),
 				hoverinfo="none",
 				showlegend=False,
 			)
@@ -171,7 +250,18 @@ def build_nav_graph(df, selected_id=None):
 			x=tab_x,
 			y=tab_y,
 			mode="lines",
-			line=dict(color="#555878", width=1.3, dash="dot"),
+			line=EDGE_STYLE["tab"],
+			hoverinfo="none",
+			showlegend=False,
+		)
+	)
+
+	fig.add_trace(
+		go.Scatter(
+			x=back_forward_x,
+			y=back_forward_y,
+			mode="lines",
+			line=EDGE_STYLE["back_forward"],
 			hoverinfo="none",
 			showlegend=False,
 		)
@@ -182,12 +272,13 @@ def build_nav_graph(df, selected_id=None):
 			x=redirect_x,
 			y=redirect_y,
 			mode="lines",
-			line=dict(color="#ff8a3d", width=2.5, dash="dash"),
+			line=EDGE_STYLE["redirect"],
 			hoverinfo="none",
 			showlegend=False,
 		)
 	)
 
+	# --- Knoten ---
 
 	node_ids = list(graph.nodes())
 
@@ -204,22 +295,46 @@ def build_nav_graph(df, selected_id=None):
 			for n, size in zip(node_ids, node_sizes)
 		]
 
-	symbol_map = {
-		"continue": "circle",
-		"tab": "square",
-		"isolated": "diamond",
-	}
-	node_symbols = [symbol_map[lane_origin[n]] for n in node_ids]
-	node_line_colors = [_lane_color(lane_of[n]) for n in node_ids]
+	# Symbol = transition_core ("wie bin ich hierhergekommen"), zusätzlich
+	# als offene Form gezeichnet, wenn die Seite aus dem Cache kam.
+	node_symbols = []
+	for n in node_ids:
+		symbol = transition_symbol(graph.nodes[n]["core"])
+		if graph.nodes[n]["cached"] and not symbol.endswith("-open"):
+			symbol += CACHED_SYMBOL_SUFFIX
+		node_symbols.append(symbol)
+
+	# Rand: rot bei Fehler-Antworten (HTTP >= 400), sonst die Spurfarbe.
+	# Dicker Rand, wenn die Navigation bewusst über die Adressleiste kam.
+	node_line_colors = []
+	node_line_widths = []
+	for n in node_ids:
+		node = graph.nodes[n]
+		qualifiers = [q.upper() for q in node["qualifiers"]]
+
+		if node["is_error"]:
+			node_line_colors.append(ERROR_BORDER_COLOR)
+		else:
+			node_line_colors.append(lane_color(lane_of[n]))
+
+		if any("ADDRESS_BAR" in q for q in qualifiers):
+			node_line_widths.append(ADDRESS_BAR_BORDER_WIDTH)
+		else:
+			node_line_widths.append(NORMAL_BORDER_WIDTH)
 
 	hover = [
 		f"""
 		<b>{graph.nodes[n]["title"][:60]}</b><br>
 		{graph.nodes[n]["time"]}<br>
-		Duration: {graph.nodes[n]["duration"]:.0f}s<br>
-		Lane-Origin: {lane_origin[n]}<br>
-		URL:<br>
-		{'<br>'.join(textwrap.wrap(graph.nodes[n]["url"], width=50))}
+		Dauer: {graph.nodes[n]["duration"]:.0f}s<br>
+		Wie: {graph.nodes[n]["core"]}{" | " + ", ".join(graph.nodes[n]["qualifiers"]) if graph.nodes[n]["qualifiers"] else ""}<br>
+		Cache: {"ja" if graph.nodes[n]["cached"] else "nein"}"""
+		+ (
+			f"""<br>HTTP: {graph.nodes[n]["response_code"]}"""
+			if graph.nodes[n]["response_code"]
+			else ""
+		)
+		+ f"""<br>{graph.nodes[n]["url"]}
 		"""
 		for n in node_ids
 	]
@@ -233,7 +348,7 @@ def build_nav_graph(df, selected_id=None):
 				color=node_colors,
 				size=node_sizes,
 				symbol=node_symbols,
-				line=dict(color=node_line_colors, width=2),
+				line=dict(color=node_line_colors, width=node_line_widths),
 			),
 			hovertext=hover,
 			hoverinfo="text",

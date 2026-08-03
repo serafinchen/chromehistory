@@ -3,6 +3,7 @@ from dash import ALL, Input, Output, State, callback, ctx, dcc, html
 from datetime import datetime, timedelta
 from app.components.drilldown import build_drilldown, empty_drilldown
 from app.components.nav_graph import build_nav_graph
+from app.components.nav_graph_legend import build_legend
 from app.data import dashboard_summary, load_df
 
 dash.register_page(
@@ -180,14 +181,29 @@ layout = html.Div(
                                                 )
                                           ]
                                     ),
-                                    dcc.Graph(
-                                          id="nav-graph",
-                                          config={
-                                                "displayModeBar": False
-                                          },
+                                    html.Div(
+                                          className="graph-with-legend",
                                           style={
-                                                "height": "100%"
-                                          }
+                                                "display": "flex",
+                                                "flexDirection": "row",
+                                                "gap": "12px",
+                                                "height": "100%",
+                                                "minHeight": 0
+                                          },
+                                          children=[
+                                                dcc.Graph(
+                                                      id="nav-graph",
+                                                      config={
+                                                            "displayModeBar": False
+                                                      },
+                                                      style={
+                                                            "flex": "1 1 auto",
+                                                            "minWidth": 0,
+                                                            "height": "100%"
+                                                      }
+                                                ),
+                                                build_legend()
+                                          ]
                                     )
                               ]
                         )
