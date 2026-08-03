@@ -1,6 +1,6 @@
 import dash
 from dash import ALL, Input, Output, State, callback, ctx, dcc, html
-
+from datetime import datetime, timedelta
 from app.components.drilldown import build_drilldown, empty_drilldown
 from app.components.nav_graph import build_nav_graph
 from app.data import dashboard_summary, load_df
@@ -251,14 +251,12 @@ def update_visits(
             ]
 
       if start:
-            filtered = filtered[
-                  filtered.visit_time_dt >= start
-            ]
+            start_dt = datetime.fromisoformat(start)
+            filtered = filtered[filtered.visit_time_dt >= start_dt]
 
       if end:
-            filtered = filtered[
-                  filtered.visit_time_dt <= end
-            ]
+            end_dt = datetime.fromisoformat(end) + timedelta(days=1)
+            filtered = filtered[filtered.visit_time_dt < end_dt]
 
       filtered = filtered.sort_values(
             "visit_time_dt",

@@ -88,7 +88,11 @@ def _timeline_layout(graph):
 		)
 
 		if nav_parent is not None:
-			lane = lane_of[nav_parent]
+			if nav_parent in lane_of:
+				lane = lane_of[nav_parent]
+			else:
+				lane = next_lane
+				next_lane += 1
 
 		elif tab_parent is not None:
 			lane = next_lane
