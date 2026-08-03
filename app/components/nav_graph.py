@@ -1,9 +1,16 @@
 import networkx as nx
 import plotly.graph_objects as go
-
+import plotly.colors as pcolors
+import textwrap
 from app.analytics import decode_core, decode_qualifier, visit_type_color
 
 MAX_GRAPH_NODES = 100
+
+LANE_PALETTE = (
+	pcolors.qualitative.Set3
+	+ pcolors.qualitative.Pastel
+	+ pcolors.qualitative.Set2
+)
 
 
 def build_visit_graph(df, limit=MAX_GRAPH_NODES):
@@ -60,17 +67,19 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 	return graph, id_set
 
 
-def _timeline_layout(graph):
-	"""
-	Zeitbasierter Layout.
-	X = echte Zeit
-	Y = Browsing-Spur
-	"""
+def _is_redirect(tags):
+	return any("REDIRECT" in str(t).upper() for t in tags)
 
+
+def _lane_color(lane_id):
+	return LANE_PALETTE[lane_id % len(LANE_PALETTE)]
+
+
+def _timeline_layout(graph):
 	nodes = sorted(graph.nodes(), key=lambda n: graph.nodes[n]["time_dt"])
 
 	lane_of = {}
-	lane_last_time = {}
+	lane_origin = {}
 
 	pos = {}
 
@@ -93,20 +102,24 @@ def _timeline_layout(graph):
 			else:
 				lane = next_lane
 				next_lane += 1
+			origin = "continue"
 
 		elif tab_parent is not None:
 			lane = next_lane
 			next_lane += 1
+			origin = "tab"
 
 		else:
 			lane = next_lane
 			next_lane += 1
+			origin = "isolated"
 
 		lane_of[node] = lane
+		lane_origin[node] = origin
 
 		pos[node] = (graph.nodes[node]["time_dt"].timestamp(), -lane)
 
-	return pos
+	return pos, lane_of, lane_origin
 
 
 def build_nav_graph(df, selected_id=None):
@@ -116,41 +129,73 @@ def build_nav_graph(df, selected_id=None):
 	if len(graph.nodes) == 0:
 		return go.Figure()
 
-	pos = _timeline_layout(graph)
+	pos, lane_of, lane_origin = _timeline_layout(graph)
 
-	nav_x = []
-	nav_y = []
-
-	tab_x = []
-	tab_y = []
-
-	edge_hover = []
+	fig = go.Figure()
+	nav_edges_by_lane = {}
+	redirect_x, redirect_y = [], []
+	tab_x, tab_y = [], []
 
 	for source, target, data in graph.edges(data=True):
 		x0, y0 = pos[source]
 		x1, y1 = pos[target]
-
-		tags = ", ".join(data.get("tags", []))
+		tags = data.get("tags", [])
 
 		if data["etype"] == "nav":
-			nav_x += [x0, x1, None]
-			nav_y += [y0, y1, None]
-
+			if _is_redirect(tags):
+				redirect_x += [x0, x1, None]
+				redirect_y += [y0, y1, None]
+			else:
+				lane = lane_of[target]
+				bucket = nav_edges_by_lane.setdefault(lane, ([], []))
+				bucket[0].extend([x0, x1, None])
+				bucket[1].extend([y0, y1, None])
 		else:
 			tab_x += [x0, x1, None]
 			tab_y += [y0, y1, None]
 
-		edge_hover.append(f"{data['etype']}<br>{tags}")
+	for lane, (xs, ys) in nav_edges_by_lane.items():
+		fig.add_trace(
+			go.Scatter(
+				x=xs,
+				y=ys,
+				mode="lines",
+				line=dict(color=_lane_color(lane), width=2),
+				hoverinfo="none",
+				showlegend=False,
+			)
+		)
+
+	fig.add_trace(
+		go.Scatter(
+			x=tab_x,
+			y=tab_y,
+			mode="lines",
+			line=dict(color="#555878", width=1.3, dash="dot"),
+			hoverinfo="none",
+			showlegend=False,
+		)
+	)
+
+	fig.add_trace(
+		go.Scatter(
+			x=redirect_x,
+			y=redirect_y,
+			mode="lines",
+			line=dict(color="#ff8a3d", width=2.5, dash="dash"),
+			hoverinfo="none",
+			showlegend=False,
+		)
+	)
+
 
 	node_ids = list(graph.nodes())
 
 	node_sizes = [8 + min(graph.nodes[n]["duration"] / 20, 40) for n in node_ids]
 
 	node_colors = []
-
 	for n in node_ids:
 		tags = graph.nodes[n]["tags"]
-
 		node_colors.append(visit_type_color(tags))
 
 	if selected_id and selected_id in id_set:
@@ -159,40 +204,25 @@ def build_nav_graph(df, selected_id=None):
 			for n, size in zip(node_ids, node_sizes)
 		]
 
+	symbol_map = {
+		"continue": "circle",
+		"tab": "square",
+		"isolated": "diamond",
+	}
+	node_symbols = [symbol_map[lane_origin[n]] for n in node_ids]
+	node_line_colors = [_lane_color(lane_of[n]) for n in node_ids]
+
 	hover = [
 		f"""
 		<b>{graph.nodes[n]["title"][:60]}</b><br>
 		{graph.nodes[n]["time"]}<br>
-		Dauer: {graph.nodes[n]["duration"]:.0f}s<br>
-		Tags: {", ".join(graph.nodes[n]["tags"])}<br>
-		{graph.nodes[n]["url"]}
+		Duration: {graph.nodes[n]["duration"]:.0f}s<br>
+		Lane-Origin: {lane_origin[n]}<br>
+		URL:<br>
+		{'<br>'.join(textwrap.wrap(graph.nodes[n]["url"], width=50))}
 		"""
 		for n in node_ids
 	]
-
-	fig = go.Figure()
-
-	fig.add_trace(
-		go.Scatter(
-			x=nav_x,
-			y=nav_y,
-			mode="lines",
-			line=dict(color="#3a3d55", width=1.5),
-			hoverinfo="none",
-			showlegend=False,
-		)
-	)
-
-	fig.add_trace(
-		go.Scatter(
-			x=tab_x,
-			y=tab_y,
-			mode="lines",
-			line=dict(color="#1f2130", width=1, dash="dot"),
-			hoverinfo="none",
-			showlegend=False,
-		)
-	)
 
 	fig.add_trace(
 		go.Scatter(
@@ -202,6 +232,8 @@ def build_nav_graph(df, selected_id=None):
 			marker=dict(
 				color=node_colors,
 				size=node_sizes,
+				symbol=node_symbols,
+				line=dict(color=node_line_colors, width=2),
 			),
 			hovertext=hover,
 			hoverinfo="text",
