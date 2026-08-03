@@ -1,27 +1,3 @@
-"""
-Legende für den Navigations-Graphen (nav_graph.py) als Dash-Komponente.
-
-Verwendung:
-
-	from app.components.nav_graph_legend import build_legend
-
-	app.layout = html.Div([
-		dcc.Graph(figure=build_nav_graph(df)),
-		build_legend(),
-	])
-
-Alle Farben/Symbole werden aus nav_graph_style.py gezogen, sodass Graph
-und Legende automatisch synchron bleiben.
-
-Hinweis: die Icons werden als reine SVG-Strings gebaut und über
-html.Img(src="data:image/svg+xml;base64,...") eingebettet, statt über
-dash.html.Svg/Circle/Polygon o.ä. Grund: dash.html generiert seine
-Komponenten nur aus der HTML-Tag-Liste - SVG-Kind-Tags wie <circle> oder
-<polygon> existieren dort je nach Dash-Version gar nicht
-(AttributeError: module 'dash.html' has no attribute 'Circle').
-Ein <img> mit Data-URI funktioniert dagegen in jeder Dash-Version.
-"""
-
 import base64
 
 from dash import html
@@ -159,8 +135,6 @@ def _section(title, rows):
 
 
 def build_legend():
-	"""Gibt ein html.Div zurück, das als eigenständige Dash-Komponente
-	neben dem Graphen (z.B. dcc.Graph) platziert werden kann."""
 
 	transition_rows = [
 		_row(_symbol_icon(TRANSITION_SYMBOLS[core]), TRANSITION_LABELS[core])
@@ -173,9 +147,18 @@ def build_legend():
 	]
 
 	border_rows = [
-		_row(_symbol_icon("circle", color=ERROR_BORDER_COLOR, filled=False), ERROR_LABEL),
-		_row(_symbol_icon("circle", color=lane_color(0), filled=False), ADDRESS_BAR_LABEL + " (dickerer Rand)"),
-		_row(_symbol_icon("circle", color=lane_color(1), filled=False), "Randfarbe = Spur (Lane), in der der Knoten liegt"),
+		_row(
+			_symbol_icon("circle", color=ERROR_BORDER_COLOR, filled=False),
+			ERROR_LABEL,
+		),
+		_row(
+			_symbol_icon("circle", color=lane_color(0), filled=False),
+			ADDRESS_BAR_LABEL + " (thicker border)",
+		),
+		_row(
+			_symbol_icon("circle", color=lane_color(1), filled=False),
+			"Border color = lane in which the node is located",
+		),
 	]
 
 	edge_rows = [

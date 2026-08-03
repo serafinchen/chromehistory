@@ -114,28 +114,6 @@ layout = html.Div(
                   className="main",
                   children=[
                         html.Div(
-                              className="panel",
-                              children=[
-                                    html.Div(
-                                          className="panel-header",
-                                          children=[
-                                                html.Span(
-                                                      "VISITS",
-                                                      className="panel-title"
-                                                ),
-                                                html.Span(
-                                                      id="table-count",
-                                                      className="panel-badge"
-                                                )
-                                          ]
-                                    ),
-                                    html.Div(
-                                          id="visit-list",
-                                          className="panel-body"
-                                    )
-                              ]
-                        ),
-                        html.Div(
                               className="panel-drilldown",
                               children=[
                                     html.Div(

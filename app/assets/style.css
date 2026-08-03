@@ -55,7 +55,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .main {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
+      grid-template-rows: 1fr;
       gap: 1px;
       flex: 1;
       overflow: hidden;
@@ -100,7 +100,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 
 .panel-drilldown {
-      grid-row: 1 / 3;
+      grid-row: auto;
       background: var(--surface);
       display: flex; 
       flex-direction: column;
