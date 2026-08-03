@@ -326,9 +326,9 @@ def build_nav_graph(df, selected_id=None):
 		f"""
 		<b>{graph.nodes[n]["title"][:60]}</b><br>
 		{graph.nodes[n]["time"]}<br>
-		Dauer: {graph.nodes[n]["duration"]:.0f}s<br>
-		Wie: {graph.nodes[n]["core"]}{" | " + ", ".join(graph.nodes[n]["qualifiers"]) if graph.nodes[n]["qualifiers"] else ""}<br>
-		Cache: {"ja" if graph.nodes[n]["cached"] else "nein"}"""
+		Duration: {graph.nodes[n]["duration"]:.0f}s<br>
+		How: {graph.nodes[n]["core"]}{" | " + ", ".join(graph.nodes[n]["qualifiers"]) if graph.nodes[n]["qualifiers"] else ""}<br>
+		Cache: {"yes" if graph.nodes[n]["cached"] else "no"}"""
 		+ (
 			f"""<br>HTTP: {graph.nodes[n]["response_code"]}"""
 			if graph.nodes[n]["response_code"]
