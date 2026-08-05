@@ -7,11 +7,6 @@ LANE_PALETTE = (
 	+ pcolors.qualitative.Set2
 )
 
-
-def lane_color(lane_id):
-	return LANE_PALETTE[lane_id % len(LANE_PALETTE)]
-
-
 TRANSITION_SYMBOLS = {
 	"LINK": "circle",
 	"TYPED": "diamond",
@@ -33,7 +28,7 @@ TRANSITION_LABELS = {
 	"TYPED": "URL typed",
 	"AUTO_BOOKMARK": "Bookmark opened",
 	"FORM_SUBMIT": "Form submitted",
-	"GENERATED": "Search suggestion (Omnibox)",
+	"GENERATED": "Search suggestion",
 	"KEYWORD": "Search engine keyword",
 	"KEYWORD_GENERATED": "Search engine keyword",
 	"RELOAD": "Page reloaded",
@@ -58,7 +53,7 @@ EDGE_STYLE = {
 }
 
 EDGE_LABELS = {
-	"lane": "Navigation (same lane, color = lane)",
+	"lane": "Normal navigation",
 	"redirect": "Automatic redirect (client/server)",
 	"back_forward": "Back/Forward button used",
 	"tab": "Opened in new tab/window",

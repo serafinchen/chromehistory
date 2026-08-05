@@ -3,7 +3,6 @@ import base64
 from dash import html
 
 from app.components.nav_graph_style import (
-	ADDRESS_BAR_LABEL,
 	CACHED_LABEL,
 	EDGE_LABELS,
 	EDGE_STYLE,
@@ -12,7 +11,6 @@ from app.components.nav_graph_style import (
 	FRESH_LABEL,
 	TRANSITION_LABELS,
 	TRANSITION_SYMBOLS,
-	lane_color,
 )
 
 BG = "#1f2130"
@@ -151,18 +149,10 @@ def build_legend():
 			_symbol_icon("circle", color=ERROR_BORDER_COLOR, filled=False),
 			ERROR_LABEL,
 		),
-		_row(
-			_symbol_icon("circle", color=lane_color(0), filled=False),
-			ADDRESS_BAR_LABEL + " (thicker border)",
-		),
-		_row(
-			_symbol_icon("circle", color=lane_color(1), filled=False),
-			"Border color = lane in which the node is located",
-		),
 	]
 
 	edge_rows = [
-		_row(_edge_icon(lane_color(0)), EDGE_LABELS["lane"]),
+		_row(_edge_icon("#888888"), EDGE_LABELS["lane"]),
 		_row(_edge_icon(**EDGE_STYLE["redirect"]), EDGE_LABELS["redirect"]),
 		_row(_edge_icon(**EDGE_STYLE["back_forward"]), EDGE_LABELS["back_forward"]),
 		_row(_edge_icon(**EDGE_STYLE["tab"]), EDGE_LABELS["tab"]),

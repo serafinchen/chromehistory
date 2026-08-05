@@ -8,14 +8,11 @@ from app.components.nav_graph_style import (
 	CACHED_SYMBOL_SUFFIX,
 	EDGE_STYLE,
 	ERROR_BORDER_COLOR,
-	ERROR_BORDER_WIDTH,
 	NORMAL_BORDER_WIDTH,
-	lane_color,
 	transition_symbol,
 )
 
-MAX_GRAPH_NODES = 100
-
+MAX_GRAPH_NODES = 50
 
 def _parse_transition(row):
 
@@ -56,6 +53,7 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 
 	df = df.sort_values("visit_time_dt").copy()
 
+	#Calculate if no duration (for circle size)
 	if "duration_sec" not in df.columns:
 		if "visit_duration_seconds" in df.columns:
 			df["duration_sec"] = df["visit_duration_seconds"]
@@ -110,26 +108,21 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 	return graph, id_set
 
 
+#Positions
 def _timeline_layout(graph):
 	nodes = sorted(graph.nodes(), key=lambda n: graph.nodes[n]["time_dt"])
-
 	lane_of = {}
-
 	pos = {}
-
 	next_lane = 0
 
 	for node in nodes:
 		preds = list(graph.predecessors(node))
-
 		nav_parent = next(
 			(p for p in preds if graph.edges[p, node]["etype"] == "nav"), None
 		)
-
 		tab_parent = next(
 			(p for p in preds if graph.edges[p, node]["etype"] == "tab"), None
 		)
-
 		if nav_parent is not None:
 			lane = lane_of[nav_parent] if nav_parent in lane_of else next_lane
 			if nav_parent not in lane_of:
@@ -144,14 +137,12 @@ def _timeline_layout(graph):
 			next_lane += 1
 
 		lane_of[node] = lane
-
 		pos[node] = (graph.nodes[node]["time_dt"].timestamp(), -lane)
 
 	return pos, lane_of
 
 
 def _classify_nav_edge(graph, target):
-
 	qualifiers = [q.upper() for q in graph.nodes[target]["qualifiers"]]
 
 	if any("REDIRECT" in q for q in qualifiers):
@@ -162,7 +153,7 @@ def _classify_nav_edge(graph, target):
 
 	return "lane"
 
-
+#Creating the Graph
 def build_nav_graph(df, selected_id=None):
 
 	graph, id_set = build_visit_graph(df)
@@ -208,12 +199,13 @@ def build_nav_graph(df, selected_id=None):
 				x=xs,
 				y=ys,
 				mode="lines",
-				line=dict(color=lane_color(lane), width=2),
+				line=dict(color="#888888", width=2),
 				hoverinfo="none",
 				showlegend=False,
 			)
 		)
 
+	#Different Lines between nodes (tab, back_forward, redirect)
 	fig.add_trace(
 		go.Scatter(
 			x=tab_x,
@@ -249,8 +241,10 @@ def build_nav_graph(df, selected_id=None):
 
 	node_ids = list(graph.nodes())
 
+	#node size
 	node_sizes = [8 + min(graph.nodes[n]["duration"] / 20, 40) for n in node_ids]
 
+	#node coloaber wird 
 	node_colors = []
 	for n in node_ids:
 		tags = graph.nodes[n]["tags"]
@@ -278,7 +272,7 @@ def build_nav_graph(df, selected_id=None):
 		if node["is_error"]:
 			node_line_colors.append(ERROR_BORDER_COLOR)
 		else:
-			node_line_colors.append(lane_color(lane_of[n]))
+			node_line_colors.append("#888888")
 
 		if any("ADDRESS_BAR" in q for q in qualifiers):
 			node_line_widths.append(ADDRESS_BAR_BORDER_WIDTH)

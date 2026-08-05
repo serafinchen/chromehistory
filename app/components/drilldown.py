@@ -61,8 +61,6 @@ def build_drilldown(df, visit_id):
 
             current = parent
 
-
-
       children = pd.concat(
             [
                   df[df["from_visit_id"] == visit_id],
