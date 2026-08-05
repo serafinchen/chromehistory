@@ -19,16 +19,21 @@ def _parse_transition(row):
 	core_val = row.get("transition_core")
 
 	if core_val not in (None, "") and not (isinstance(core_val, float) and pd.isna(core_val)):
-		core = str(core_val)
+
+		if isinstance(core_val, list):
+			core = core_val[0] if core_val else "UNKNOWN"
+
+		else:
+			core = str(core_val).strip("[]'\"")
 
 		qual_raw = row.get("transition_qualifier", "") or ""
 
-		qualifiers = [q for q in str(qual_raw).split("|") if q]
+		qualifiers = list(decode_qualifier(int(row.get("transition_qualifiers", 0))))
 
 		return core, qualifiers
 
 	core_tags = decode_core(int(row.get("transition", 0)))
-	qualifiers = list(decode_qualifier(int(row.get("transition_qualifiers", 0))))
+	qualifiers = list(decode_qualifier(int(row.get("transition_qualifier", 0))))
 
 	if isinstance(core_tags, (list, tuple)):
 		core = core_tags[0] if core_tags else "UNKNOWN"
@@ -284,8 +289,8 @@ def build_nav_graph(df, selected_id=None):
 		<b>{graph.nodes[n]["title"][:60]}</b><br>
 		{graph.nodes[n]["time"]}<br>
 		Duration: {graph.nodes[n]["duration"]:.0f}s<br>
-		How: {graph.nodes[n]["core"]}{" | " + ", ".join(graph.nodes[n]["qualifiers"]) if graph.nodes[n]["qualifiers"] else ""}<br>
-		Cache: {"yes" if graph.nodes[n]["cached"] else "no"}"""
+		How: {graph.nodes[n]["core"]}{" | " + ", ".join(graph.nodes[n]["qualifiers"]) if graph.nodes[n]["qualifiers"] else ""}
+		"""
 		+ (
 			f"""<br>HTTP: {graph.nodes[n]["response_code"]}"""
 			if graph.nodes[n]["response_code"]
