@@ -18,14 +18,6 @@ MAX_GRAPH_NODES = 100
 
 
 def _parse_transition(row):
-	"""
-	Liest die Transition-Info aus der Zeile.
-
-	Bevorzugt die bereits dekodierten Felder aus HistoryVisit
-	(transition_core: str, transition_qualifier: "A|B|C"-String).
-	Fällt auf rohe Bitmasken (transition / transition_qualifiers als int)
-	zurück, falls die Zeile aus einer älteren/anderen Quelle stammt.
-	"""
 
 	core_val = row.get("transition_core")
 
@@ -38,7 +30,6 @@ def _parse_transition(row):
 
 		return core, qualifiers
 
-	# Legacy-Fallback: rohe Transition-Bitmasken dekodieren
 	core_tags = decode_core(int(row.get("transition", 0)))
 	qualifiers = list(decode_qualifier(int(row.get("transition_qualifiers", 0))))
 
@@ -120,16 +111,6 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 
 
 def _timeline_layout(graph):
-	"""
-	Zeitbasierter Layout.
-	X = echte Zeit
-	Y = Browsing-Spur (Lane)
-
-	Eine Lane wird fortgesetzt, solange eine nav-Kante (from_visit_id)
-	zu einem bereits bekannten Knoten existiert. Neue Tabs (opener_visit_id)
-	und komplett isolierte Knoten (kein Vorgänger) starten eine neue Lane.
-	"""
-
 	nodes = sorted(graph.nodes(), key=lambda n: graph.nodes[n]["time_dt"])
 
 	lane_of = {}
@@ -170,10 +151,6 @@ def _timeline_layout(graph):
 
 
 def _classify_nav_edge(graph, target):
-	"""
-	Ordnet eine nav-Kante anhand der Qualifier des Ziel-Knotens einer
-	Kategorie zu: "redirect", "back_forward" oder "lane" (normale Navigation).
-	"""
 
 	qualifiers = [q.upper() for q in graph.nodes[target]["qualifiers"]]
 
@@ -196,14 +173,6 @@ def build_nav_graph(df, selected_id=None):
 	pos, lane_of = _timeline_layout(graph)
 
 	fig = go.Figure()
-
-	# --- Kanten ---
-	# "lane"-Kanten: normale Navigation, eingefärbt nach ihrer Spur.
-	# "redirect": automatische Weiterleitung (Client/Server), unabhängig
-	#             von der Spurfarbe auffällig markiert.
-	# "back_forward": Nutzer ist über Zurück/Vorwärts gesprungen - keine
-	#                 "neue" Reise, sondern ein Sprung zu bekanntem Terrain.
-	# "tab": Seite wurde aus einem anderen Tab/Fenster heraus geöffnet.
 
 	nav_edges_by_lane = {}
 	redirect_x, redirect_y = [], []
@@ -278,8 +247,6 @@ def build_nav_graph(df, selected_id=None):
 		)
 	)
 
-	# --- Knoten ---
-
 	node_ids = list(graph.nodes())
 
 	node_sizes = [8 + min(graph.nodes[n]["duration"] / 20, 40) for n in node_ids]
@@ -295,8 +262,6 @@ def build_nav_graph(df, selected_id=None):
 			for n, size in zip(node_ids, node_sizes)
 		]
 
-	# Symbol = transition_core ("wie bin ich hierhergekommen"), zusätzlich
-	# als offene Form gezeichnet, wenn die Seite aus dem Cache kam.
 	node_symbols = []
 	for n in node_ids:
 		symbol = transition_symbol(graph.nodes[n]["core"])
@@ -304,8 +269,6 @@ def build_nav_graph(df, selected_id=None):
 			symbol += CACHED_SYMBOL_SUFFIX
 		node_symbols.append(symbol)
 
-	# Rand: rot bei Fehler-Antworten (HTTP >= 400), sonst die Spurfarbe.
-	# Dicker Rand, wenn die Navigation bewusst über die Adressleiste kam.
 	node_line_colors = []
 	node_line_widths = []
 	for n in node_ids:
