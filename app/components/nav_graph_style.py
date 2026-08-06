@@ -1,12 +1,3 @@
-import plotly.colors as pcolors
-
-
-LANE_PALETTE = (
-	pcolors.qualitative.Set3
-	+ pcolors.qualitative.Pastel
-	+ pcolors.qualitative.Set2
-)
-
 TRANSITION_SYMBOLS = {
 	"LINK": "circle",
 	"TYPED": "diamond",

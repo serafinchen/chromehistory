@@ -1,9 +1,5 @@
-import datetime
-import shutil
 import pathlib
 from typing import Optional
-from ccl_chromium_reader import ChromiumProfileFolder
-from ccl_chromium_reader import ccl_chromium_cache
 from app.analytics import decode_core, decode_qualifier, compute_intent_score
 from app.helpers import chrome_time_to_datetime, normalize_url
 from dataclasses import dataclass, field
@@ -93,7 +89,7 @@ def normalize(history, cache_data: dict[str, dict] | None = None) -> list[Histor
                   visit_duration_seconds=h.visit_duration.total_seconds() if h.visit_duration else 0,
                   from_visit_id=h.from_visit_id,
                   opener_visit_id=h.opener_visit_id,
-                  transition_core=decode_core(h.transition.core),
+                  transition_core=decode_core(h.transition.core)[0],
                   transition_qualifier="|".join(decode_qualifier(h.transition.qualifier)),
                   intent_score=compute_intent_score(h),
 

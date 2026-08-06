@@ -1,5 +1,3 @@
-import datetime
-from urllib.parse import urlparse
 import math
 
 
@@ -42,29 +40,21 @@ QUALIFIERS = {
       0x00004000: "RELOAD_BYPASSING_CACHE",
       }
       
-def decode_core(value: int) -> list[str]:
-      if value == 0:
+# analytics.py
+def decode_core(core) -> list[str]:
+      if core is None:
+            return ["UNKNOWN"]
+      name = getattr(core, "name", None)
+      return [name.upper()] if name else ["UNKNOWN"]
+
+
+def decode_qualifier(qualifier) -> list[str]:
+      if not qualifier:
             return []
-
-      result = []
-
-      for flag, name in TRANSITIONS.items():
-            if value & flag:
-                  result.append(name)
-
-      return result
-
-def decode_qualifier(value: int) -> list[str]:
-      if value == 0:
+      try:
+            return [f.name.upper() for f in qualifier]
+      except TypeError:
             return []
-
-      result = []
-
-      for flag, name in QUALIFIERS.items():
-            if value & flag:
-                  result.append(name)
-
-      return result 
 
 CORE_WEIGHTS = {
       "LINK": 3.0,
@@ -169,11 +159,11 @@ def intent_color_vec(scores):
       return [intent_color(s) for s in scores]
 
 def visit_type_color(tags):
-    if "TYPED" in tags:
-        return "#ffcc00"
-    if "LINK" in tags:
-        return "#55aaff"
-    if "RELOAD" in tags:
-        return "#999999"
-    return "#777777"
+      if "TYPED" in tags:
+            return "#ffcc00"
+      if "LINK" in tags:
+            return "#55aaff"
+      if "RELOAD" in tags:
+            return "#999999"
+      return "#777777"
 

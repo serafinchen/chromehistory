@@ -2,7 +2,7 @@ import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
 
-from app.analytics import decode_core, decode_qualifier, visit_type_color
+from app.analytics import visit_type_color
 from app.components.nav_graph_style import (
 	ADDRESS_BAR_BORDER_WIDTH,
 	CACHED_SYMBOL_SUFFIX,
@@ -15,30 +15,14 @@ from app.components.nav_graph_style import (
 MAX_GRAPH_NODES = 50
 
 def _parse_transition(row):
+	core = row.get("transition_core")
+	if not core or (isinstance(core, float) and pd.isna(core)):
+		core = "UNKNOWN"
 
-	core_val = row.get("transition_core")
-
-	if core_val not in (None, "") and not (isinstance(core_val, float) and pd.isna(core_val)):
-
-		if isinstance(core_val, list):
-			core = core_val[0] if core_val else "UNKNOWN"
-
-		else:
-			core = str(core_val).strip("[]'\"")
-
-		qual_raw = row.get("transition_qualifier", "") or ""
-
-		qualifiers = list(decode_qualifier(int(row.get("transition_qualifiers", 0))))
-
-		return core, qualifiers
-
-	core_tags = decode_core(int(row.get("transition", 0)))
-	qualifiers = list(decode_qualifier(int(row.get("transition_qualifier", 0))))
-
-	if isinstance(core_tags, (list, tuple)):
-		core = core_tags[0] if core_tags else "UNKNOWN"
-	else:
-		core = str(core_tags)
+	qual_str = row.get("transition_qualifier") or ""
+	if isinstance(qual_str, float) and pd.isna(qual_str):
+		qual_str = ""
+	qualifiers = qual_str.split("|") if qual_str else []
 
 	return core, qualifiers
 
