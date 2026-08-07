@@ -1,6 +1,5 @@
 import math
 
-
 SESSION_GAP = 30 * 60
 
 #HOW DID THE VISIT TOOK PLACE
@@ -40,7 +39,7 @@ QUALIFIERS = {
       0x00004000: "RELOAD_BYPASSING_CACHE",
       }
       
-# analytics.py
+
 def decode_core(core) -> list[str]:
       if core is None:
             return ["UNKNOWN"]

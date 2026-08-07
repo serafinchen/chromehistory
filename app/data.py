@@ -4,16 +4,39 @@ from urllib.parse import urlparse
 import pandas as pd
 
 from app.analytics import add_sessions
-from app.history import CACHE_PATHS, PROFILE_PATH, normalize
-from app.loader import load_cache, load_history
+from app.config import CACHE_PATHS, PROFILE_PATH
+from app.history import load_history_entries
+from app.cache import load_cache_entries
+from app.mapping import MatchedVisit, match_history_with_cache
+
+
+def _visit_to_row(v: MatchedVisit) -> dict:
+      row = asdict(v.history)
+      row.update(
+            {
+                  "match_type": v.match_type.value,
+                  "response_code": v.response_code,
+                  "content_type": v.content_type,
+                  "content_language": v.content_language,
+                  "is_personalized": v.is_personalized,
+                  "is_no_store": v.is_no_store,
+                  "cache_age_seconds": v.age,
+                  "last_modified": v.last_modified,
+                  "content_length": v.content_length,
+                  "domain_asset_count": v.domain_asset_count,
+                  "domain_total_bytes": v.domain_total_bytes,
+                  "is_error": v.is_error,
+            }
+      )
+      return row
 
 
 def load_df():
-      history_raw = load_history(PROFILE_PATH)
-      cache_data = load_cache(CACHE_PATHS["chrome"])
-      visits = normalize(history_raw, cache_data)
+      history_entries = load_history_entries(PROFILE_PATH)
+      cache_entries = load_cache_entries(CACHE_PATHS["chrome"])
+      visits = match_history_with_cache(history_entries, cache_entries)
 
-      df = pd.DataFrame([asdict(v) for v in visits])
+      df = pd.DataFrame([_visit_to_row(v) for v in visits])
       df["domain"] = df["url"].apply(lambda u: urlparse(u).netloc)
       df["visit_time_dt"] = pd.to_datetime(df["visit_time"])
       df["duration"] = df["visit_duration_seconds"]
@@ -34,5 +57,5 @@ def dashboard_summary(df):
       return {
             "total_visits": len(df),
             "total_sessions": df["session_id"].nunique(),
-            "high_intent": len(df[df["intent_score"] >= 5])
+            "high_intent": len(df[df["intent_score"] >= 5]),
       }

@@ -1,6 +1,5 @@
 from dash import html
 
-
 def transition_tags(row):
 
       tags = []
