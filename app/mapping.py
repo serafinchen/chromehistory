@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
+from app.cache import CacheEntry, index_by_domain, index_by_url
 from app.history import HistoryEntry
-from app.cache import CacheEntry, index_by_url, index_by_domain
 
 
 class MatchType(str, Enum):

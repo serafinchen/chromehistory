@@ -8,8 +8,6 @@ from ccl_chromium_reader import ccl_chromium_history
 from app.analytics import decode_core, decode_qualifier, compute_intent_score
 from app.helpers import chrome_time_to_datetime, normalize_url
 
-TEMP_DB = "history_copy.db"
-
 @dataclass
 class HistoryEntry:
       visit_id: int
@@ -28,19 +26,8 @@ class HistoryEntry:
             return urlparse(self.url).netloc
 
 
-def _copy_history_db(profile_path: pathlib.Path) -> pathlib.Path:
-      history_file = profile_path / "History"
-      temp_db = pathlib.Path(TEMP_DB)
-
-      try:
-            shutil.copy2(history_file, temp_db)
-            return temp_db
-      except OSError:
-            return temp_db if temp_db.exists() else history_file
-
-
-def load_history_entries(profile_path: pathlib.Path) -> list[HistoryEntry]:
-      db_path = _copy_history_db(pathlib.Path(profile_path))
+def load_history_entries(snapshot_path: pathlib.Path) -> list[HistoryEntry]:
+      db_path = pathlib.Path(snapshot_path) / "History"
 
       with ccl_chromium_history.HistoryDatabase(db_path) as history_db:
             raw_records = list(history_db.iter_history_records(None))

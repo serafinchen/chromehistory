@@ -2,121 +2,142 @@ import pathlib
 from dataclasses import dataclass
 from typing import Optional
 from urllib.parse import urlparse
+import gzip
+import zlib
 
-from ccl_chromium_reader import ccl_chromium_cache
+try:
+    import brotli
+except ImportError:
+    brotli = None
+
+import pathlib
+import shutil
+
+from ccl_chromium_reader import ChromiumProfileFolder
+
 from app.helpers import normalize_url
 
-
+TEMP_CACHE_DIR = pathlib.Path("cache_copy")
 @dataclass
 class CacheEntry:
-      url: str
-      domain: str
-      response_code: Optional[int] = None
-      content_type: Optional[str] = None
-      content_language: Optional[str] = None
-      is_personalized: bool = False
-      is_no_store: bool = False
-      age: Optional[int] = None
-      last_modified: Optional[str] = None
-      content_length: Optional[int] = None
+    url: str
+    domain: str
+    raw_key: str
+    response_code: Optional[int] = None
+    content_type: Optional[str] = None
+    content_language: Optional[str] = None
+    content_encoding: Optional[str] = None
+    is_personalized: bool = False
+    is_no_store: bool = False
+    age: Optional[int] = None
+    last_modified: Optional[str] = None
+    content_length: Optional[int] = None
 
 
-def _parse_headers(raw_headers: Optional[str]) -> tuple[Optional[int], dict[str, str]]:
-      response_code: Optional[int] = None
-      headers: dict[str, str] = {}
+def _attr(meta, name: str) -> Optional[str]:
+      if meta is None:
+            return None
+      values = meta.get_attribute(name)
+      return values[0] if values else None
 
-      if not raw_headers:
-            return response_code, headers
 
-      for line in raw_headers.splitlines():
-            if line.startswith("HTTP/"):
+def _parse_status_code(meta) -> Optional[int]:
+      if meta is None:
+            return None
+      for line in meta.http_header_declarations:
+            if line.upper().startswith("HTTP/"):
                   parts = line.split(" ", 2)
                   if len(parts) >= 2:
                         try:
-                              response_code = int(parts[1])
+                              return int(parts[1])
                         except ValueError:
-                              pass
-            elif ":" in line:
-                  k, _, v = line.partition(":")
-                  headers[k.strip().lower()] = v.strip()
-
-      return response_code, headers
+                              return None
+      return None
 
 
-def _build_cache_entry(url: str, headers: dict[str, str], response_code: Optional[int]) -> CacheEntry:
-      def h(name: str) -> Optional[str]:
-            return headers.get(name)
+def _build_cache_entry(record, url: str) -> CacheEntry:
+      meta = record.metadata
 
-      content_length: Optional[int] = None
-      if h("content-length"):
-            try:
-                  content_length = int(h("content-length"))
-            except ValueError:
-                  pass
+      content_length_raw = _attr(meta, "content-length")
+      try:
+            content_length = int(content_length_raw) if content_length_raw else None
+      except ValueError:
+            content_length = None
 
-      age: Optional[int] = None
-      if h("age"):
-            try:
-                  age = int(h("age"))
-            except ValueError:
-                  pass
+      age_raw = _attr(meta, "age")
+      try:
+            age = int(age_raw) if age_raw else None
+      except ValueError:
+            age = None
 
-      vary = h("vary") or ""
+      vary = _attr(meta, "vary") or ""
       is_personalized = any(
-            v.strip().lower() in ("cookie", "authorization")
-            for v in vary.split(",")
+            v.strip().lower() in ("cookie", "authorization") for v in vary.split(",")
       )
 
-      cc = h("cache-control") or ""
+      cc = _attr(meta, "cache-control") or ""
       is_no_store = "no-store" in cc.lower()
 
       return CacheEntry(
             url=url,
             domain=urlparse(url).netloc,
-            response_code=response_code,
-            content_type=h("content-type"),
-            content_language=h("content-language"),
+            raw_key=record.key.raw_key,
+            response_code=_parse_status_code(meta),
+            content_type=_attr(meta, "content-type"),
+            content_language=_attr(meta, "content-language"),
+            content_encoding=_attr(meta, "content-encoding"),
             is_personalized=is_personalized,
             is_no_store=is_no_store,
             age=age,
-            last_modified=h("last-modified"),
+            last_modified=_attr(meta, "last-modified"),
             content_length=content_length,
       )
 
 
-def load_cache_entries(cache_path: pathlib.Path) -> list[CacheEntry]:
+def load_cache_entries(profile: ChromiumProfileFolder) -> list[CacheEntry]:
       entries: list[CacheEntry] = []
-
-      if not cache_path.exists():
-            return entries
-
-      try:
-            cache_type = ccl_chromium_cache.guess_cache_class(cache_path)
-            cache = cache_type(cache_path)
-      except Exception:
-            return entries
-
-      for key in cache.keys():
+      for record in profile.iterate_cache(None, omit_cached_data=True):
             try:
-                  record = cache[key]
-                  url = normalize_url(record.key)
+                  if record.metadata is None:
+                        continue
+                  url = normalize_url(record.key.url)
                   domain = urlparse(url).netloc
-
                   if not domain:
                         continue
-
-                  try:
-                        raw_headers = record.get_response_headers()
-                  except Exception:
-                        raw_headers = None
-
-                  response_code, headers = _parse_headers(raw_headers)
-                  entries.append(_build_cache_entry(url, headers, response_code))
-
-            except Exception:
+                  entries.append(_build_cache_entry(record, url))
+            except Exception as exc:
+                  print(f"[cache] Skipping record: {exc}")
                   continue
-
       return entries
+
+
+def get_cached_body(profile: ChromiumProfileFolder, raw_key: str) -> Optional[bytes]:
+      data_hits = profile.cache.get_cachefile(raw_key)
+      meta_hits = profile.cache.get_metadata(raw_key)
+
+      if not data_hits or not meta_hits:
+            return None
+
+      data = data_hits[0]
+      meta = meta_hits[0]
+      if data is None:
+            return None
+
+      encoding = (_attr(meta, "content-encoding") or "").strip().lower()
+      try:
+            if encoding == "gzip":
+                  data = gzip.decompress(data)
+            elif encoding == "br":
+                  if brotli is None:
+                        raise RuntimeError("Paket 'brotli' fehlt (pip install Brotli)")
+                  data = brotli.decompress(data)
+            elif encoding == "deflate":
+                  data = zlib.decompress(data, -zlib.MAX_WBITS)
+      except Exception as exc:
+            print(f"[cache] Dekompression fehlgeschlagen ({encoding}): {exc}")
+            return None
+
+      return data
 
 
 def index_by_url(entries: list[CacheEntry]) -> dict[str, list[CacheEntry]]:

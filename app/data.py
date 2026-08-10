@@ -2,13 +2,23 @@ from dataclasses import asdict
 from urllib.parse import urlparse
 
 import pandas as pd
+from ccl_chromium_reader import ChromiumProfileFolder
 
 from app.analytics import add_sessions
-from app.config import CACHE_PATHS, PROFILE_PATH
-from app.history import load_history_entries
 from app.cache import load_cache_entries
+from app.config import SNAPSHOT_PATH, PROFILE_PATH
+from app.snapshot import create_snapshot
+from app.history import load_history_entries
 from app.mapping import MatchedVisit, match_history_with_cache
 
+_profile_singleton: ChromiumProfileFolder | None = None
+
+def get_profile() -> ChromiumProfileFolder:
+    global _profile_singleton
+    if _profile_singleton is None:
+            create_snapshot(PROFILE_PATH, SNAPSHOT_PATH)
+            _profile_singleton = ChromiumProfileFolder(SNAPSHOT_PATH)
+    return _profile_singleton
 
 def _visit_to_row(v: MatchedVisit) -> dict:
       row = asdict(v.history)
@@ -20,7 +30,7 @@ def _visit_to_row(v: MatchedVisit) -> dict:
                   "content_language": v.content_language,
                   "is_personalized": v.is_personalized,
                   "is_no_store": v.is_no_store,
-                  "cache_age_seconds": v.age,
+                  "age": v.age,
                   "last_modified": v.last_modified,
                   "content_length": v.content_length,
                   "domain_asset_count": v.domain_asset_count,
@@ -32,8 +42,9 @@ def _visit_to_row(v: MatchedVisit) -> dict:
 
 
 def load_df():
-      history_entries = load_history_entries(PROFILE_PATH)
-      cache_entries = load_cache_entries(CACHE_PATHS["chrome"])
+      profile = get_profile()
+      history_entries = load_history_entries(SNAPSHOT_PATH)
+      cache_entries = load_cache_entries(profile)
       visits = match_history_with_cache(history_entries, cache_entries)
 
       df = pd.DataFrame([_visit_to_row(v) for v in visits])
