@@ -13,15 +13,14 @@ def create_snapshot(profile_path: pathlib.Path, snapshot_path: pathlib.Path) -> 
         shutil.copy2(history_src, history_dst)
     except OSError as exc:
         raise RuntimeError(
-            f"Konnte History-Datenbank nicht kopieren ({exc}). "
-            "Ist Chrome geschlossen?"
+            f"Couldn't make snapchot ({exc}). "
         ) from exc
 
     cache_src = profile_path / "Cache" / "Cache_Data"
     cache_dst = snapshot_path / "Cache" / "Cache_Data"
 
     if not cache_src.exists():
-        raise FileNotFoundError(f"Cache-Ordner nicht gefunden: {cache_src}")
+        raise FileNotFoundError(f"Cache-folder not found: {cache_src}")
 
     if cache_dst.exists():
         shutil.rmtree(cache_dst)
@@ -40,10 +39,9 @@ def create_snapshot(profile_path: pathlib.Path, snapshot_path: pathlib.Path) -> 
     missing_critical = [c for c in critical if c in skipped]
     if missing_critical:
         print(
-            f"[snapshot] WARNUNG: kritische Cache-Datei(en) gesperrt: "
-            f"{missing_critical}. Bitte Chrome schließen und Snapshot neu erstellen."
+            "[snapshot] Warning: critical cache data is missing "
         )
     elif skipped:
-        print(f"[snapshot] {len(skipped)} gesperrte Cache-Datei(en) übersprungen: {skipped}")
+        print(f"[snapshot] {len(skipped)} locked cache data skipped: {skipped}")
 
     return snapshot_path
