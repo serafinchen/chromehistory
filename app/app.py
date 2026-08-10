@@ -1,7 +1,8 @@
-from pathlib import Path
 import sys
-from dash import Dash
+from pathlib import Path
+
 import dash
+from dash import Dash
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:

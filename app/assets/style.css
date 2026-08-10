@@ -120,6 +120,22 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       transition: border-color 0.15s;
       position: relative;
 }
+
+.history_visit {
+      font-size: 11px;
+      color: var(--muted);
+      padding: 3px 0;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+}
+
+.history_visit:first-child {
+      color: var(--accent);
+      font-weight: 700;
+}
+
 .visit-card:hover { border-color: var(--accent2); }
 .visit-card.active {
       border-color: var(--accent);
@@ -143,6 +159,29 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .vc-tag.hi { border-color: var(--accent); color: var(--accent); }
 .vc-tag.warn { border-color: var(--warn); color: var(--warn); }
 .vc-tag.danger { border-color: var(--danger); color: var(--danger); }
+
+.cache_visit {
+  font-size: 11px;
+  color: var(--text);
+  padding: 3px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cache_visit:first-child {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.cache_none {
+  margin-top: 8px;
+  padding: 8px 0 2px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-style: italic;
+}
 
 .nav-arrow {
       text-align: center; color: var(--border); font-size: 18px;

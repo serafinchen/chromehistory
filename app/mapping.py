@@ -8,9 +8,7 @@ from app.cache import CacheEntry, index_by_url, index_by_domain
 
 class MatchType(str, Enum):
       EXACT_URL = "exact_url"      
-      DOMAIN_ONLY = "domain_only" 
       NONE = "none"                
-
 
 @dataclass
 class MatchedVisit:
@@ -35,7 +33,7 @@ class MatchedVisit:
             return self.response_code is not None and self.response_code >= 400
 
 
-def _pick_representative(entries: list[CacheEntry]) -> CacheEntry:
+def _pick_html(entries: list[CacheEntry]) -> CacheEntry:
       html_entries = [e for e in entries if e.content_type and "text/html" in e.content_type]
       return html_entries[0] if html_entries else entries[0]
 
@@ -55,7 +53,7 @@ def match_history_with_cache(history_entries: list[HistoryEntry], cache_entries:
             domain_asset_count = len(domain_matches)
 
             if exact_matches:
-                  ref = _pick_representative(exact_matches)
+                  ref = _pick_html(exact_matches)
                   matched.append(
                         MatchedVisit(
                               history=h,
@@ -69,15 +67,6 @@ def match_history_with_cache(history_entries: list[HistoryEntry], cache_entries:
                               last_modified=ref.last_modified,
                               content_length=ref.content_length,
                               matched_cache_entries=exact_matches,
-                              domain_asset_count=domain_asset_count,
-                              domain_total_bytes=domain_total_bytes,
-                        )
-                  )
-            elif domain_matches:
-                  matched.append(
-                        MatchedVisit(
-                              history=h,
-                              match_type=MatchType.DOMAIN_ONLY,
                               domain_asset_count=domain_asset_count,
                               domain_total_bytes=domain_total_bytes,
                         )
