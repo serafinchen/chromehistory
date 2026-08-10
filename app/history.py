@@ -26,8 +26,8 @@ class HistoryEntry:
             return urlparse(self.url).netloc
 
 
-def load_history_entries(snapshot_path: pathlib.Path) -> list[HistoryEntry]:
-      db_path = pathlib.Path(snapshot_path) / "History"
+def load_history_entries(profile_path: pathlib.Path) -> list[HistoryEntry]:
+      db_path = pathlib.Path(profile_path) / "History"
 
       with ccl_chromium_history.HistoryDatabase(db_path) as history_db:
             raw_records = list(history_db.iter_history_records(None))

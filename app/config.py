@@ -1,7 +1,6 @@
 import pathlib
 
 PROFILE_PATH = pathlib.Path(r"C:\Users\seraf\AppData\Local\Google\Chrome\User Data\Default")
-SNAPSHOT_PATH = pathlib.Path(r"C:\Users\seraf\chromehistory\snapshot")
 
 CACHE_PATHS = {
       "chrome": pathlib.Path.home() / "AppData/Local/Google/Chrome/User Data/Default",

@@ -6,8 +6,7 @@ from ccl_chromium_reader import ChromiumProfileFolder
 
 from app.analytics import add_sessions
 from app.cache import load_cache_entries
-from app.config import SNAPSHOT_PATH, PROFILE_PATH
-from app.snapshot import create_snapshot
+from app.config import PROFILE_PATH
 from app.history import load_history_entries
 from app.mapping import MatchedVisit, match_history_with_cache
 
@@ -15,9 +14,10 @@ _profile_singleton: ChromiumProfileFolder | None = None
 
 def get_profile() -> ChromiumProfileFolder:
     global _profile_singleton
+
     if _profile_singleton is None:
-            create_snapshot(PROFILE_PATH, SNAPSHOT_PATH)
-            _profile_singleton = ChromiumProfileFolder(SNAPSHOT_PATH)
+        _profile_singleton = ChromiumProfileFolder(PROFILE_PATH)
+
     return _profile_singleton
 
 def _visit_to_row(v: MatchedVisit) -> dict:
@@ -43,7 +43,7 @@ def _visit_to_row(v: MatchedVisit) -> dict:
 
 def load_df():
       profile = get_profile()
-      history_entries = load_history_entries(SNAPSHOT_PATH)
+      history_entries = load_history_entries(PROFILE_PATH)
       cache_entries = load_cache_entries(profile)
       visits = match_history_with_cache(history_entries, cache_entries)
 
