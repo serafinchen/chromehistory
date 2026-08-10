@@ -89,7 +89,6 @@ def make_visit_card(row, role="active"):
                         className="cache_visit",
                   ),
             ]
-            html.Div("Cache Data with the same URL")
       else:
             cache_children = [
                   html.Div(
@@ -175,6 +174,8 @@ def make_visit_card(row, role="active"):
                         else "No Intent Score",
                         className="history_visit",
                   ),
+
+                  html.Div("Cache Data with the same URL", className="cache-header",),
 
                   *cache_children,
 
