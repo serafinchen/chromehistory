@@ -137,10 +137,6 @@ layout = html.Div(
                                                 empty_drilldown()
                                           ]
                                     ),
-                                    html.Div(
-                                          id="drilldown-stats",
-                                          className="stats-row"
-                                    )
                               ]
                         ),
                                                 html.Div(
@@ -414,10 +410,6 @@ def update_graph(
 @callback(
       Output(
             "drilldown-content",
-            "children"
-      ),
-      Output(
-            "drilldown-stats",
             "children"
       ),
       Output(

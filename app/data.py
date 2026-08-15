@@ -13,12 +13,12 @@ from app.mapping import MatchedVisit, match_history_with_cache
 _profile_singleton: ChromiumProfileFolder | None = None
 
 def get_profile() -> ChromiumProfileFolder:
-    global _profile_singleton
+      global _profile_singleton
 
-    if _profile_singleton is None:
-        _profile_singleton = ChromiumProfileFolder(PROFILE_PATH)
+      if _profile_singleton is None:
+            _profile_singleton = ChromiumProfileFolder(PROFILE_PATH)
 
-    return _profile_singleton
+      return _profile_singleton
 
 def _visit_to_row(v: MatchedVisit) -> dict:
       row = asdict(v.history)

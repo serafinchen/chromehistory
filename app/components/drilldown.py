@@ -20,12 +20,12 @@ def empty_drilldown():
 def build_drilldown(df, visit_id):
 
       if visit_id is None:
-            return empty_drilldown(), [], "select a visit"
+            return empty_drilldown(), "select a visit"
 
       row_df = df[df["visit_id"] == visit_id]
 
       if row_df.empty:
-            return html.Div("Visit not found"), [], "-"
+            return html.Div("Visit not found"), "-"
 
       row = row_df.iloc[0]
 
@@ -139,114 +139,8 @@ def build_drilldown(df, visit_id):
                   )
                   )
 
-      duration = float(row["duration"])
-
-      if duration < 60:
-            duration_text = f"{duration:.1f} s"
-      else:
-            duration_text = f"{duration/60:.1f} min"
-
-      stats = html.Div(
-
-            className="stats-row",
-
-            children=[
-
-                  html.Div(
-
-                  className="stat-box",
-
-                  children=[
-
-                        html.Div(
-                              row["visit_time_dt"].strftime("%H:%M:%S"),
-                              className="stat-val",
-                        ),
-
-                        html.Div(
-                              "TIME",
-                              className="stat-lbl",
-                        ),
-                  ],
-                  ),
-
-                  html.Div(
-
-                  className="stat-box",
-
-                  children=[
-
-                        html.Div(
-                              duration_text,
-                              className="stat-val",
-                        ),
-
-                        html.Div(
-                              "DURATION",
-                              className="stat-lbl",
-                        ),
-                  ],
-                  ),
-
-                  html.Div(
-
-                  className="stat-box",
-
-                  children=[
-
-                        html.Div(
-                              f"S{row['session_id']}",
-                              className="stat-val",
-                        ),
-
-                        html.Div(
-                              "SESSION",
-                              className="stat-lbl",
-                        ),
-                  ],
-                  ),
-
-                  html.Div(
-
-                  className="stat-box",
-
-                  children=[
-
-                        html.Div(
-                              row["domain"],
-                              className="stat-val",
-                        ),
-
-                        html.Div(
-                              "DOMAIN",
-                              className="stat-lbl",
-                        ),
-                  ],
-                  ),
-
-                  html.Div(
-
-                  className="stat-box",
-
-                  children=[
-
-                        html.Div(
-                              str(len(children)),
-                              className="stat-val",
-                        ),
-
-                        html.Div(
-                              "CHILDREN",
-                              className="stat-lbl",
-                        ),
-                  ],
-                  ),
-
-            ],
-      )
 
       return (
             content,
-            stats,
             f"Visit {visit_id}",
       )
