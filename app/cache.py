@@ -6,12 +6,11 @@ import gzip
 import zlib
 
 try:
-    import brotli
+      import brotli
 except ImportError:
-    brotli = None
+      brotli = None
 
 import pathlib
-import shutil
 
 from ccl_chromium_reader import ChromiumProfileFolder
 
@@ -20,18 +19,18 @@ from app.helpers import normalize_url
 TEMP_CACHE_DIR = pathlib.Path("cache_copy")
 @dataclass
 class CacheEntry:
-    url: str
-    domain: str
-    raw_key: str
-    response_code: Optional[int] = None
-    content_type: Optional[str] = None
-    content_language: Optional[str] = None
-    content_encoding: Optional[str] = None
-    is_personalized: bool = False
-    is_no_store: bool = False
-    age: Optional[int] = None
-    last_modified: Optional[str] = None
-    content_length: Optional[int] = None
+      url: str
+      domain: str
+      raw_key: str
+      response_code: Optional[int] = None
+      content_type: Optional[str] = None
+      content_language: Optional[str] = None
+      content_encoding: Optional[str] = None
+      is_personalized: bool = False
+      is_no_store: bool = False
+      age: Optional[int] = None
+      last_modified: Optional[str] = None
+      content_length: Optional[int] = None
 
 
 def _attr(meta, name: str) -> Optional[str]:
