@@ -322,10 +322,7 @@ def update_visits(
       ),
       prevent_initial_call=True
 )
-def select_card(
-      clicks,
-      ids
-):
+def select_card(clicks,ids):
 
       triggered = ctx.triggered_id
 

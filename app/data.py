@@ -31,6 +31,8 @@ def _visit_to_row(v: MatchedVisit) -> dict:
                   "is_personalized": v.is_personalized,
                   "is_no_store": v.is_no_store,
                   "age": v.age,
+                  "raw_key": v.raw_key,
+                  "is_html": v.is_html,
                   "last_modified": v.last_modified,
                   "content_length": v.content_length,
                   "domain_asset_count": v.domain_asset_count,
@@ -68,5 +70,4 @@ def dashboard_summary(df):
       return {
             "total_visits": len(df),
             "total_sessions": df["session_id"].nunique(),
-            "high_intent": len(df[df["intent_score"] >= 5]),
       }

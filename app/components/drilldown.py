@@ -1,8 +1,8 @@
 import pandas as pd
 from dash import html
-
+from app.cache import get_cached_body
 from app.components.visit_card import make_visit_card
-
+from app.data import get_profile
 
 def empty_drilldown():
       return html.Div(
@@ -15,6 +15,18 @@ def empty_drilldown():
                   ),
             ],
       )
+
+
+def _load_html_for_row(row):
+      if not row.get("is_html") or not row.get("raw_key"):
+            return None
+      body = get_cached_body(get_profile(), row["raw_key"])
+      if body is None:
+            return None
+      try:
+            return body.decode("utf-8", errors="replace")
+      except Exception:
+            return None
 
 
 def build_drilldown(df, visit_id):
@@ -92,6 +104,7 @@ def build_drilldown(df, visit_id):
                   make_visit_card(
                         ancestor,
                         "ancestor",
+                        html_content=_load_html_for_row(ancestor),
                   )
                   )
 
@@ -106,6 +119,7 @@ def build_drilldown(df, visit_id):
             make_visit_card(
                   row,
                   "active",
+                  html_content=_load_html_for_row(row),
             )
       )
 
@@ -136,6 +150,7 @@ def build_drilldown(df, visit_id):
                   make_visit_card(
                         child,
                         "child",
+                        html_content=_load_html_for_row(child),
                   )
                   )
 

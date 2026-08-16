@@ -18,7 +18,7 @@ def format_duration(seconds):
       return f"{hours:.1f}h"
 
 
-def make_visit_card(row, role="active"):
+def make_visit_card(row, role="active", html_content=None):
 
       duration = format_duration(
             row.get("duration", 0)
@@ -89,6 +89,29 @@ def make_visit_card(row, role="active"):
                         className="cache_visit",
                   ),
             ]
+            if html_content:
+                  cache_children.append(
+                        html.Details(
+                              className="cache_html_details",
+                              children=[
+                                    html.Summary(
+                                          "RENDERED HTML",
+                                          className="cache_html_toggle",
+                                    ),
+                                    html.Iframe(
+                                          srcDoc=html_content,
+                                          sandbox="allow-same-origin",
+                                          className="cache_html_frame",
+                                          style={
+                                                "width": "100%",
+                                                "height": "500px",
+                                                "border": "1px solid #444",
+                                                "marginTop": "8px",
+                                          },
+                                    ),
+                              ],
+                        )
+                  )
       else:
             cache_children = [
                   html.Div(
