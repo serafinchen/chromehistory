@@ -10,7 +10,7 @@ from app.helpers import chrome_time_to_datetime, normalize_url
 
 @dataclass
 class HistoryEntry:
-      visit_id: int
+      rec_id: int
       url: str
       title: str
       visit_time: str
@@ -37,7 +37,7 @@ def load_history_entries(profile_path: pathlib.Path) -> list[HistoryEntry]:
             visit_time = chrome_time_to_datetime(h.visit_time)
             entries.append(
                   HistoryEntry(
-                        visit_id=h.rec_id,
+                        rec_id=h.rec_id,
                         url=normalize_url(h.url),
                         title=h.title or "Untitled",
                         visit_time=visit_time.isoformat(),
