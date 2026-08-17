@@ -74,40 +74,7 @@ layout = html.Div(
                                     "width": "180px"
                               }
                         ),
-                        dcc.DatePickerRange(
-                              id="date-filter",
-                              display_format="YYYY-MM-DD"
-                        ),
-                        dcc.Dropdown(
-                              id="duration-filter",
-                              options=[
-                                    {
-                                          "label": "All Durations",
-                                          "value": -1
-                                    },
-                                    {
-                                          "label": "> 10 sec",
-                                          "value": 10
-                                    },
-                                    {
-                                          "label": "> 30 sec",
-                                          "value": 30
-                                    },
-                                    {
-                                          "label": "> 60 sec",
-                                          "value": 60
-                                    },
-                                    {
-                                          "label": "> 5 min",
-                                          "value": 300
-                                    }
-                              ],
-                              value=-1,
-                              clearable=False,
-                              style={
-                                    "width": "180px"
-                              }
-                        )
+                        
                   ]
             ),
             html.Div(
