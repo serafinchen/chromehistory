@@ -129,7 +129,7 @@ def build_drilldown(df, rec_id):
 
                   edge = "Opened in new tab"
 
-                  if child["from_visit_id"] == visit_id:
+                  if child["from_visit_id"] == rec_id:
                         edge = "Navigation"
 
                   content.append(
