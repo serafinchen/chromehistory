@@ -1,3 +1,5 @@
+import math
+
 import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
@@ -230,8 +232,11 @@ def build_nav_graph(df, selected_id=None):
 
 	node_ids = list(graph.nodes())
 
-	#node size
-	node_sizes = [8 + min(graph.nodes[n]["duration"] / 20, 40) for n in node_ids]
+	# Node size grows sublinearly with visit duration, keeping long visits readable.
+	node_sizes = [
+		8 + min(math.sqrt(max(graph.nodes[n]["duration"], 0) / 20), 12)
+		for n in node_ids
+	]
 
 	#node coloaber wird 
 	node_colors = []
