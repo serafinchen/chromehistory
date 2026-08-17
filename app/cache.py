@@ -128,12 +128,12 @@ def get_cached_body(profile: ChromiumProfileFolder, raw_key: str) -> Optional[by
                   data = gzip.decompress(data)
             elif encoding == "br":
                   if brotli is None:
-                        raise RuntimeError("Paket 'brotli' fehlt (pip install Brotli)")
+                        raise RuntimeError("'brotli' is missing (pip install Brotli)")
                   data = brotli.decompress(data)
             elif encoding == "deflate":
                   data = zlib.decompress(data, -zlib.MAX_WBITS)
       except Exception as exc:
-            print(f"[cache] Dekompression fehlgeschlagen ({encoding}): {exc}")
+            print(f"[cache] Decompression failed ({encoding}): {exc}")
             return None
 
       return data
