@@ -28,7 +28,7 @@ def _visit_to_row(v: MatchedVisit) -> dict:
                   "response_code": v.response_code,
                   "content_type": v.content_type,
                   "content_language": v.content_language,
-                  "is_personalized": v.is_personalized,
+                  "is_probably_personalized": v.is_probably_personalized,
                   "is_no_store": v.is_no_store,
                   "age": v.age,
                   "raw_key": v.raw_key,

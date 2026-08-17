@@ -26,7 +26,7 @@ class CacheEntry:
       content_type: Optional[str] = None
       content_language: Optional[str] = None
       content_encoding: Optional[str] = None
-      is_personalized: bool = False
+      is_probably_personalized: bool = False
       is_no_store: bool = False
       age: Optional[int] = None
       last_modified: Optional[str] = None
@@ -70,7 +70,7 @@ def _build_cache_entry(record, url: str) -> CacheEntry:
             age = None
 
       vary = _attr(meta, "vary") or ""
-      is_personalized = any(
+      is_probably_personalized = any(
             v.strip().lower() in ("cookie", "authorization") for v in vary.split(",")
       )
 
@@ -85,7 +85,7 @@ def _build_cache_entry(record, url: str) -> CacheEntry:
             content_type=_attr(meta, "content-type"),
             content_language=_attr(meta, "content-language"),
             content_encoding=_attr(meta, "content-encoding"),
-            is_personalized=is_personalized,
+            is_probably_personalized=is_probably_personalized,
             is_no_store=is_no_store,
             age=age,
             last_modified=_attr(meta, "last-modified"),

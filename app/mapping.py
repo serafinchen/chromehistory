@@ -18,7 +18,7 @@ class MatchedVisit:
       response_code: Optional[int] = None
       content_type: Optional[str] = None
       content_language: Optional[str] = None
-      is_personalized: bool = False
+      is_probably_personalized: bool = False
       is_no_store: bool = False
       age: Optional[int] = None
       last_modified: Optional[str] = None
@@ -63,7 +63,7 @@ def match_history_with_cache(history_entries: list[HistoryEntry], cache_entries:
                               response_code=ref.response_code,
                               content_type=ref.content_type,
                               content_language=ref.content_language,
-                              is_personalized=any(e.is_personalized for e in exact_matches),
+                              is_probably_personalized=any(e.is_probably_personalized for e in exact_matches),
                               is_no_store=any(e.is_no_store for e in exact_matches),
                               age=ref.age,
                               last_modified=ref.last_modified,
