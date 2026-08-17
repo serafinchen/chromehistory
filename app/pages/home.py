@@ -155,7 +155,7 @@ layout = html.Div(
                   data=int(
                         df.sort_values(
                               "visit_time_dt"
-                        ).iloc[-1]["visit_id"]
+                        ).iloc[-1]["rec_id"]
                   )
             )
       ]
@@ -386,10 +386,10 @@ def update_graph(
       )
 )
 def update_drilldown(
-      visit_id
+      rec_id
 ):
 
       return build_drilldown(
             df,
-            visit_id
+            rec_id
       )

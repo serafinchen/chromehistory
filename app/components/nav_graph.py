@@ -57,7 +57,7 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 	if len(df) > limit:
 		df = df.tail(limit)
 
-	id_set = set(df["visit_id"])
+	id_set = set(df["rec_id"])
 
 	for _, row in df.iterrows():
 		core, qualifiers = _parse_transition(row)
@@ -65,7 +65,7 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 		tags = [core, *qualifiers]
 
 		graph.add_node(
-			row["visit_id"],
+			row["rec_id"],
 			title=row["title"],
 			url=row["url"],
 			score=row.get("intent_score", 0),
@@ -84,14 +84,14 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 		if row["from_visit_id"] in id_set:
 			graph.add_edge(
 				row["from_visit_id"],
-				row["visit_id"],
+				row["rec_id"],
 				etype="nav",
 			)
 
 		if row["opener_visit_id"] in id_set:
 			graph.add_edge(
 				row["opener_visit_id"],
-				row["visit_id"],
+				row["rec_id"],
 				etype="tab",
 			)
 

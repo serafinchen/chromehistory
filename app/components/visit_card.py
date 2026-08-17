@@ -125,7 +125,7 @@ def make_visit_card(row, role="active", html_content=None):
 
             id={
                   "type": "visit-card",
-                  "index": int(row["visit_id"])
+                  "index": int(row["rec_id"])
             },
 
             children=[
@@ -152,8 +152,8 @@ def make_visit_card(row, role="active", html_content=None):
                   ),                              
 
                   html.Div(
-                        f"ID: {row['visit_id']}" 
-                        if row.get("visit_id") is not None 
+                        f"ID: {row['rec_id']}" 
+                        if row.get("rec_id") is not None 
                         else "No ID",
                         className="history_visit",
                   ),

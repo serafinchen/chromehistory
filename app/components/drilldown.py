@@ -29,12 +29,12 @@ def _load_html_for_row(row):
             return None
 
 
-def build_drilldown(df, visit_id):
+def build_drilldown(df, rec_id):
 
-      if visit_id is None:
+      if rec_id is None:
             return empty_drilldown(), "select a visit"
 
-      row_df = df[df["visit_id"] == visit_id]
+      row_df = df[df["rec_id"] == rec_id]
 
       if row_df.empty:
             return html.Div("Visit not found"), "-"
@@ -62,7 +62,7 @@ def build_drilldown(df, visit_id):
 
             visited.add(parent_id)
 
-            parent = df[df["visit_id"] == parent_id]
+            parent = df[df["rec_id"] == parent_id]
 
             if parent.empty:
                   break
@@ -75,14 +75,14 @@ def build_drilldown(df, visit_id):
 
       children = pd.concat(
             [
-                  df[df["from_visit_id"] == visit_id],
-                  df[df["opener_visit_id"] == visit_id],
+                  df[df["from_visit_id"] == rec_id],
+                  df[df["opener_visit_id"] == rec_id],
             ]
       )
 
       children = (
             children
-            .drop_duplicates("visit_id")
+            .drop_duplicates("rec_id")
             .sort_values("visit_time_dt")
       )
 
@@ -157,5 +157,5 @@ def build_drilldown(df, visit_id):
 
       return (
             content,
-            f"Visit {visit_id}",
+            f"Visit {rec_id}",
       )
