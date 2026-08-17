@@ -52,7 +52,7 @@ def load_df():
       df = pd.DataFrame([_visit_to_row(v) for v in visits])
       df["domain"] = df["url"].apply(lambda u: urlparse(u).netloc)
       df["visit_time_dt"] = pd.to_datetime(df["visit_time"])
-      df["duration"] = df["visit_duration_seconds"]
+      df["duration"] = df["visit_duration"]
       df = add_sessions(df)
 
       return df.sort_values("visit_time_dt").reset_index(drop=True)

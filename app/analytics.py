@@ -1,5 +1,3 @@
-import math
-
 SESSION_GAP = 30 * 60
 
 #HOW DID THE VISIT TOOK PLACE
