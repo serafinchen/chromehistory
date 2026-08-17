@@ -68,7 +68,6 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 			row["rec_id"],
 			title=row["title"],
 			url=row["url"],
-			score=row.get("intent_score", 0),
 			time=row["visit_time"],
 			time_dt=row["visit_time_dt"],
 			duration=row["duration_sec"],

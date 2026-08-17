@@ -191,13 +191,6 @@ def make_visit_card(row, role="active", html_content=None):
                         className="history_visit",
                   ),
 
-                  html.Div(
-                        f"INTENT: {row['intent_score']:.2f}"
-                        if row.get("intent_score") is not None
-                        else "No Intent Score",
-                        className="history_visit",
-                  ),
-
                   html.Div("Cache Data with the same URL", className="cache-header",),
 
                   *cache_children,
