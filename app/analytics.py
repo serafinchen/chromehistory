@@ -1,57 +1,26 @@
 SESSION_GAP = 30 * 60
-
-#HOW DID THE VISIT TOOK PLACE
-TRANSITIONS = {
-      1: "LINK",
-      2: "TYPED",
-      4: "AUTO_BOOKMARK",
-      8: "AUTO_SUBFRAME",
-      16: "MANUAL_SUBFRAME",
-      32: "GENERATED",
-      64: "AUTO_TOPLEVEL",
-      128: "FORM_SUBMIT",
-      256: "RELOAD"
-}
-
-#UNDER WHICH CIRCUMSTANCES
-QUALIFIERS = {
-      0x00000001: "FORWARD_BACK",
-      0x00000002: "FORWARD_BACK_MASK",
-
-      0x00000004: "CLIENT_REDIRECT",
-      0x00000008: "SERVER_REDIRECT",
-      0x00000010: "IS_REDIRECT_MASK",
-
-      0x00000020: "FROM_ADDRESS_BAR",
-      0x00000040: "FROM_API",
-      0x00000080: "FROM_START_PAGE",
-
-      0x00000100: "IS_MAIN_FRAME",
-      0x00000200: "IS_SUBFRAME",
-
-      0x00000400: "BLOCKED",
-      0x00000800: "SAFE_BROWSING",
-      0x00001000: "ALLOW_POPUP",
-
-      0x00002000: "RELOAD",
-      0x00004000: "RELOAD_BYPASSING_CACHE",
-      }
       
 
 def decode_core(core) -> list[str]:
       if core is None:
             return ["UNKNOWN"]
-      name = getattr(core, "name", None)
-      return [name.upper()] if name else ["UNKNOWN"]
+      return getattr(core, "name", "UNKNOWN").upper()
 
 
-def decode_qualifier(qualifier) -> list[str]:
+def decode_qualifier(qualifier) -> str:
       if not qualifier:
-            return []
+            return ""
+
+      if isinstance(qualifier, str):
+            return qualifier.upper()
+
       try:
-            return [f.name.upper() for f in qualifier]
+            return "|".join(
+                  getattr(q, "name", str(q)).upper()
+                  for q in qualifier
+            )
       except TypeError:
-            return []
+            return str(qualifier).upper()
 
 
 def add_sessions(df):

@@ -42,8 +42,8 @@ def load_history_entries(profile_path: pathlib.Path) -> list[HistoryEntry]:
                         visit_duration=h.visit_duration.total_seconds() if h.visit_duration else 0,
                         from_visit_id=h.from_visit_id,
                         opener_visit_id=h.opener_visit_id,
-                        transition_core=decode_core(h.transition.core)[0],
-                        transition_qualifier="|".join(decode_qualifier(h.transition.qualifier)),
+                        transition_core=decode_core(h.transition.core),
+                        transition_qualifier=decode_qualifier(h.transition.qualifier),
                   )
             )
 
