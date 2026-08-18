@@ -2,6 +2,7 @@ import base64
 
 from dash import html
 
+from app.analytics import visit_type_color
 from app.components.nav_graph_style import (
 	CACHED_LABEL,
 	EDGE_STYLE,
@@ -150,6 +151,13 @@ def build_legend():
 		),
 	]
 
+	visit_type_rows = [
+		_row(_symbol_icon("circle", color=visit_type_color("TYPED")), "Typed (TYPED)"),
+		_row(_symbol_icon("circle", color=visit_type_color("LINK")), "Link clicked (LINK)"),
+		_row(_symbol_icon("circle", color=visit_type_color("RELOAD")), "Page reloaded (RELOAD)"),
+		_row(_symbol_icon("circle", color=visit_type_color("UNKNOWN")), "Other / unknown"),
+	]
+
 	edge_rows = [
 		_row(_edge_icon("#888888"), "lane"),
 		_row(_edge_icon(**EDGE_STYLE["redirect"]), "redirect"),
@@ -160,6 +168,7 @@ def build_legend():
 	return html.Div(
 		[
 			_section("Transition", transition_rows),
+			_section("Visit type color", visit_type_rows),
 			_section("Edges/Relationships", edge_rows),
 			_section("Cache-Status", cache_rows),
 			_section("Border", border_rows),
