@@ -6,7 +6,7 @@ from ccl_chromium_reader import ChromiumProfileFolder
 
 from app.analytics import add_sessions
 from app.cache import load_cache_entries
-from app.config import PROFILE_PATH
+from app.helpers import PROFILE_PATH
 from app.history import load_history_entries
 from app.mapping import MatchedVisit, match_history_with_cache
 
