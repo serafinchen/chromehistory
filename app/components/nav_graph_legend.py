@@ -4,7 +4,6 @@ from dash import html
 
 from app.components.nav_graph_style import (
 	CACHED_LABEL,
-	EDGE_LABELS,
 	EDGE_STYLE,
 	ERROR_BORDER_COLOR,
 	ERROR_LABEL,
@@ -152,10 +151,10 @@ def build_legend():
 	]
 
 	edge_rows = [
-		_row(_edge_icon("#888888"), EDGE_LABELS["lane"]),
-		_row(_edge_icon(**EDGE_STYLE["redirect"]), EDGE_LABELS["redirect"]),
-		_row(_edge_icon(**EDGE_STYLE["back_forward"]), EDGE_LABELS["back_forward"]),
-		_row(_edge_icon(**EDGE_STYLE["tab"]), EDGE_LABELS["tab"]),
+		_row(_edge_icon("#888888"), "lane"),
+		_row(_edge_icon(**EDGE_STYLE["redirect"]), "redirect"),
+		_row(_edge_icon(**EDGE_STYLE["back_forward"]), "back_forward"),
+		_row(_edge_icon(**EDGE_STYLE["tab"]), "tab"),
 	]
 
 	return html.Div(

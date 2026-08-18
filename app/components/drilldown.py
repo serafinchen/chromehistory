@@ -1,8 +1,8 @@
 import pandas as pd
 from dash import html
-
+from app.cache import get_cached_body
 from app.components.visit_card import make_visit_card
-
+from app.data import get_profile
 
 def empty_drilldown():
       return html.Div(
@@ -17,15 +17,27 @@ def empty_drilldown():
       )
 
 
-def build_drilldown(df, visit_id):
+def _load_html_for_row(row):
+      if not row.get("is_html") or not row.get("raw_key"):
+            return None
+      body = get_cached_body(get_profile(), row["raw_key"])
+      if body is None:
+            return None
+      try:
+            return body.decode("utf-8", errors="replace")
+      except Exception:
+            return None
 
-      if visit_id is None:
-            return empty_drilldown(), [], "select a visit"
 
-      row_df = df[df["visit_id"] == visit_id]
+def build_drilldown(df, rec_id):
+
+      if rec_id is None:
+            return empty_drilldown(), "select a visit"
+
+      row_df = df[df["rec_id"] == rec_id]
 
       if row_df.empty:
-            return html.Div("Visit not found"), [], "-"
+            return html.Div("Visit not found"), "-"
 
       row = row_df.iloc[0]
 
@@ -50,7 +62,7 @@ def build_drilldown(df, visit_id):
 
             visited.add(parent_id)
 
-            parent = df[df["visit_id"] == parent_id]
+            parent = df[df["rec_id"] == parent_id]
 
             if parent.empty:
                   break
@@ -63,14 +75,14 @@ def build_drilldown(df, visit_id):
 
       children = pd.concat(
             [
-                  df[df["from_visit_id"] == visit_id],
-                  df[df["opener_visit_id"] == visit_id],
+                  df[df["from_visit_id"] == rec_id],
+                  df[df["opener_visit_id"] == rec_id],
             ]
       )
 
       children = (
             children
-            .drop_duplicates("visit_id")
+            .drop_duplicates("rec_id")
             .sort_values("visit_time_dt")
       )
 
@@ -92,6 +104,7 @@ def build_drilldown(df, visit_id):
                   make_visit_card(
                         ancestor,
                         "ancestor",
+                        html_content=_load_html_for_row(ancestor),
                   )
                   )
 
@@ -106,6 +119,7 @@ def build_drilldown(df, visit_id):
             make_visit_card(
                   row,
                   "active",
+                  html_content=_load_html_for_row(row),
             )
       )
 
@@ -115,7 +129,7 @@ def build_drilldown(df, visit_id):
 
                   edge = "Opened in new tab"
 
-                  if child["from_visit_id"] == visit_id:
+                  if child["from_visit_id"] == rec_id:
                         edge = "Navigation"
 
                   content.append(
@@ -136,117 +150,12 @@ def build_drilldown(df, visit_id):
                   make_visit_card(
                         child,
                         "child",
+                        html_content=_load_html_for_row(child),
                   )
                   )
 
-      duration = float(row["duration"])
-
-      if duration < 60:
-            duration_text = f"{duration:.1f} s"
-      else:
-            duration_text = f"{duration/60:.1f} min"
-
-      stats = html.Div(
-
-            className="stats-row",
-
-            children=[
-
-                  html.Div(
-
-                  className="stat-box",
-
-                  children=[
-
-                        html.Div(
-                              row["visit_time_dt"].strftime("%H:%M:%S"),
-                              className="stat-val",
-                        ),
-
-                        html.Div(
-                              "TIME",
-                              className="stat-lbl",
-                        ),
-                  ],
-                  ),
-
-                  html.Div(
-
-                  className="stat-box",
-
-                  children=[
-
-                        html.Div(
-                              duration_text,
-                              className="stat-val",
-                        ),
-
-                        html.Div(
-                              "DURATION",
-                              className="stat-lbl",
-                        ),
-                  ],
-                  ),
-
-                  html.Div(
-
-                  className="stat-box",
-
-                  children=[
-
-                        html.Div(
-                              f"S{row['session_id']}",
-                              className="stat-val",
-                        ),
-
-                        html.Div(
-                              "SESSION",
-                              className="stat-lbl",
-                        ),
-                  ],
-                  ),
-
-                  html.Div(
-
-                  className="stat-box",
-
-                  children=[
-
-                        html.Div(
-                              row["domain"],
-                              className="stat-val",
-                        ),
-
-                        html.Div(
-                              "DOMAIN",
-                              className="stat-lbl",
-                        ),
-                  ],
-                  ),
-
-                  html.Div(
-
-                  className="stat-box",
-
-                  children=[
-
-                        html.Div(
-                              str(len(children)),
-                              className="stat-val",
-                        ),
-
-                        html.Div(
-                              "CHILDREN",
-                              className="stat-lbl",
-                        ),
-                  ],
-                  ),
-
-            ],
-      )
 
       return (
             content,
-            stats,
-            f"Visit {visit_id}",
+            f"Visit {rec_id}",
       )

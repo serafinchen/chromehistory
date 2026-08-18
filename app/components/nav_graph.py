@@ -1,3 +1,5 @@
+import math
+
 import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
@@ -10,6 +12,7 @@ from app.components.nav_graph_style import (
 	ERROR_BORDER_COLOR,
 	NORMAL_BORDER_WIDTH,
 	transition_symbol,
+	transition_label,
 )
 
 MAX_GRAPH_NODES = 50
@@ -44,8 +47,8 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 
 	#Calculate if no duration (for circle size)
 	if "duration_sec" not in df.columns:
-		if "visit_duration_seconds" in df.columns:
-			df["duration_sec"] = df["visit_duration_seconds"]
+		if "visit_duration" in df.columns:
+			df["duration_sec"] = df["visit_duration"]
 		else:
 			df["duration_sec"] = (
 				df["visit_time_dt"].shift(-1) - df["visit_time_dt"]
@@ -56,7 +59,7 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 	if len(df) > limit:
 		df = df.tail(limit)
 
-	id_set = set(df["visit_id"])
+	id_set = set(df["rec_id"])
 
 	for _, row in df.iterrows():
 		core, qualifiers = _parse_transition(row)
@@ -64,10 +67,9 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 		tags = [core, *qualifiers]
 
 		graph.add_node(
-			row["visit_id"],
+			row["rec_id"],
 			title=row["title"],
 			url=row["url"],
-			score=row.get("intent_score", 0),
 			time=row["visit_time"],
 			time_dt=row["visit_time_dt"],
 			duration=row["duration_sec"],
@@ -83,14 +85,14 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 		if row["from_visit_id"] in id_set:
 			graph.add_edge(
 				row["from_visit_id"],
-				row["visit_id"],
+				row["rec_id"],
 				etype="nav",
 			)
 
 		if row["opener_visit_id"] in id_set:
 			graph.add_edge(
 				row["opener_visit_id"],
-				row["visit_id"],
+				row["rec_id"],
 				etype="tab",
 			)
 
@@ -230,8 +232,11 @@ def build_nav_graph(df, selected_id=None):
 
 	node_ids = list(graph.nodes())
 
-	#node size
-	node_sizes = [8 + min(graph.nodes[n]["duration"] / 20, 40) for n in node_ids]
+	# Node size grows sublinearly with visit duration, keeping long visits readable.
+	node_sizes = [
+		8 + min(math.sqrt(max(graph.nodes[n]["duration"], 0) / 20), 12)
+		for n in node_ids
+	]
 
 	#node coloaber wird 
 	node_colors = []
@@ -269,19 +274,7 @@ def build_nav_graph(df, selected_id=None):
 			node_line_widths.append(NORMAL_BORDER_WIDTH)
 
 	hover = [
-		f"""
-		<b>{graph.nodes[n]["title"][:60]}</b><br>
-		{graph.nodes[n]["time"]}<br>
-		Duration: {graph.nodes[n]["duration"]:.0f}s<br>
-		How: {graph.nodes[n]["core"]}{" | " + ", ".join(graph.nodes[n]["qualifiers"]) if graph.nodes[n]["qualifiers"] else ""}
-		"""
-		+ (
-			f"""<br>HTTP: {graph.nodes[n]["response_code"]}"""
-			if graph.nodes[n]["response_code"]
-			else ""
-		)
-		+ f"""<br>{graph.nodes[n]["url"]}
-		"""
+		f"""<b>{graph.nodes[n]["title"][:60]}</b><br>{str(graph.nodes[n]["time"])[11:16]} · {transition_label(graph.nodes[n]["core"])}"""
 		for n in node_ids
 	]
 

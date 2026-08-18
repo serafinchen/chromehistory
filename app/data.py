@@ -2,13 +2,23 @@ from dataclasses import asdict
 from urllib.parse import urlparse
 
 import pandas as pd
+from ccl_chromium_reader import ChromiumProfileFolder
 
 from app.analytics import add_sessions
-from app.config import CACHE_PATHS, PROFILE_PATH
-from app.history import load_history_entries
 from app.cache import load_cache_entries
+from app.config import PROFILE_PATH
+from app.history import load_history_entries
 from app.mapping import MatchedVisit, match_history_with_cache
 
+_profile_singleton: ChromiumProfileFolder | None = None
+
+def get_profile() -> ChromiumProfileFolder:
+      global _profile_singleton
+
+      if _profile_singleton is None:
+            _profile_singleton = ChromiumProfileFolder(PROFILE_PATH)
+
+      return _profile_singleton
 
 def _visit_to_row(v: MatchedVisit) -> dict:
       row = asdict(v.history)
@@ -18,9 +28,11 @@ def _visit_to_row(v: MatchedVisit) -> dict:
                   "response_code": v.response_code,
                   "content_type": v.content_type,
                   "content_language": v.content_language,
-                  "is_personalized": v.is_personalized,
+                  "is_probably_personalized": v.is_probably_personalized,
                   "is_no_store": v.is_no_store,
-                  "cache_age_seconds": v.age,
+                  "age": v.age,
+                  "raw_key": v.raw_key,
+                  "is_html": v.is_html,
                   "last_modified": v.last_modified,
                   "content_length": v.content_length,
                   "domain_asset_count": v.domain_asset_count,
@@ -32,14 +44,15 @@ def _visit_to_row(v: MatchedVisit) -> dict:
 
 
 def load_df():
+      profile = get_profile()
       history_entries = load_history_entries(PROFILE_PATH)
-      cache_entries = load_cache_entries(CACHE_PATHS["chrome"])
+      cache_entries = load_cache_entries(profile)
       visits = match_history_with_cache(history_entries, cache_entries)
 
       df = pd.DataFrame([_visit_to_row(v) for v in visits])
       df["domain"] = df["url"].apply(lambda u: urlparse(u).netloc)
       df["visit_time_dt"] = pd.to_datetime(df["visit_time"])
-      df["duration"] = df["visit_duration_seconds"]
+      df["duration"] = df["visit_duration"]
       df = add_sessions(df)
 
       return df.sort_values("visit_time_dt").reset_index(drop=True)
@@ -57,5 +70,4 @@ def dashboard_summary(df):
       return {
             "total_visits": len(df),
             "total_sessions": df["session_id"].nunique(),
-            "high_intent": len(df[df["intent_score"] >= 5]),
       }

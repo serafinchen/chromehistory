@@ -15,17 +15,17 @@ TRANSITION_SYMBOLS = {
 DEFAULT_SYMBOL = "circle"
 
 TRANSITION_LABELS = {
-	"LINK": "Link clicked",
-	"TYPED": "URL typed",
-	"AUTO_BOOKMARK": "Bookmark opened",
-	"FORM_SUBMIT": "Form submitted",
-	"GENERATED": "Search suggestion",
-	"KEYWORD": "Search engine keyword",
-	"KEYWORD_GENERATED": "Search engine keyword",
-	"RELOAD": "Page reloaded",
-	"AUTO_TOPLEVEL": "New tab / homepage",
-	"AUTO_SUBFRAME": "Subframe (automatic)",
-	"MANUAL_SUBFRAME": "Subframe (manual)",
+	"LINK": "Link clicked (LINK)",
+	"TYPED": "URL typed (TYPED)",
+	"AUTO_BOOKMARK": "Bookmark opened (AUTO_BOOKMARK)",
+	"FORM_SUBMIT": "Form submitted (FORM_SUBMIT)",
+	"GENERATED": "Search suggestion (GENERATED)",
+	"KEYWORD": "Search engine keyword (KEYWORD)",
+	"KEYWORD_GENERATED": "Search engine keyword (KEYWORD_GENERATED)",
+	"RELOAD": "Page reloaded (RELOAD)",
+	"AUTO_TOPLEVEL": "New tab / homepage (AUTO_TOPLEVEL)",
+	"AUTO_SUBFRAME": "Subframe (automatic) (AUTO_SUBFRAME)",
+	"MANUAL_SUBFRAME": "Subframe (manual) (MANUAL_SUBFRAME)",
 }
 
 
@@ -41,13 +41,6 @@ EDGE_STYLE = {
 	"redirect": dict(color="#ff8a3d", width=2.5, dash="dash"),
 	"back_forward": dict(color="#c86bfa", width=2, dash="longdash"),
 	"tab": dict(color="#555878", width=1.3, dash="dot"),
-}
-
-EDGE_LABELS = {
-	"lane": "Normal navigation",
-	"redirect": "Automatic redirect (client/server)",
-	"back_forward": "Back/Forward button used",
-	"tab": "Opened in new tab/window",
 }
 
 

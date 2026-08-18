@@ -10,7 +10,7 @@
       --danger:    #ff3d5a;
       --warn:      #ffd700;
       --text:      #e2e4ef;
-      --muted:     #555878;
+      --muted:     #8b8ea6;
       --font-mono: 'Space Mono', monospace;
       --font-head: 'Syne', sans-serif;
 }
@@ -162,7 +162,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 .cache_visit {
   font-size: 11px;
-  color: var(--text);
+  color: var(--muted);
   padding: 3px 0;
   white-space: nowrap;
   overflow: hidden;
@@ -177,10 +177,17 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 .cache_none {
   margin-top: 8px;
-  padding: 8px 0 2px;
+  padding: 8px;
   border-top: 1px solid var(--border);
   color: var(--muted);
   font-style: italic;
+}
+
+.cache-header {
+      margin-top: 8px;
+      padding-top: 8px;
+      color: var(--text);
+      border-top: 1px solid var(--border);
 }
 
 .nav-arrow {

@@ -74,40 +74,7 @@ layout = html.Div(
                                     "width": "180px"
                               }
                         ),
-                        dcc.DatePickerRange(
-                              id="date-filter",
-                              display_format="YYYY-MM-DD"
-                        ),
-                        dcc.Dropdown(
-                              id="duration-filter",
-                              options=[
-                                    {
-                                          "label": "All Durations",
-                                          "value": -1
-                                    },
-                                    {
-                                          "label": "> 10 sec",
-                                          "value": 10
-                                    },
-                                    {
-                                          "label": "> 30 sec",
-                                          "value": 30
-                                    },
-                                    {
-                                          "label": "> 60 sec",
-                                          "value": 60
-                                    },
-                                    {
-                                          "label": "> 5 min",
-                                          "value": 300
-                                    }
-                              ],
-                              value=-1,
-                              clearable=False,
-                              style={
-                                    "width": "180px"
-                              }
-                        )
+                        
                   ]
             ),
             html.Div(
@@ -137,10 +104,6 @@ layout = html.Div(
                                                 empty_drilldown()
                                           ]
                                     ),
-                                    html.Div(
-                                          id="drilldown-stats",
-                                          className="stats-row"
-                                    )
                               ]
                         ),
                                                 html.Div(
@@ -192,7 +155,7 @@ layout = html.Div(
                   data=int(
                         df.sort_values(
                               "visit_time_dt"
-                        ).iloc[-1]["visit_id"]
+                        ).iloc[-1]["rec_id"]
                   )
             )
       ]
@@ -326,10 +289,7 @@ def update_visits(
       ),
       prevent_initial_call=True
 )
-def select_card(
-      clicks,
-      ids
-):
+def select_card(clicks,ids):
 
       triggered = ctx.triggered_id
 
@@ -417,10 +377,6 @@ def update_graph(
             "children"
       ),
       Output(
-            "drilldown-stats",
-            "children"
-      ),
-      Output(
             "drilldown-badge",
             "children"
       ),
@@ -430,10 +386,10 @@ def update_graph(
       )
 )
 def update_drilldown(
-      visit_id
+      rec_id
 ):
 
       return build_drilldown(
             df,
-            visit_id
+            rec_id
       )

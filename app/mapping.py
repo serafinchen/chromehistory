@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
+from app.cache import CacheEntry, index_by_domain, index_by_url
 from app.history import HistoryEntry
-from app.cache import CacheEntry, index_by_url, index_by_domain
 
 
 class MatchType(str, Enum):
@@ -18,12 +18,14 @@ class MatchedVisit:
       response_code: Optional[int] = None
       content_type: Optional[str] = None
       content_language: Optional[str] = None
-      is_personalized: bool = False
+      is_probably_personalized: bool = False
       is_no_store: bool = False
       age: Optional[int] = None
       last_modified: Optional[str] = None
       content_length: Optional[int] = None
       matched_cache_entries: list[CacheEntry] = field(default_factory=list)
+      raw_key: Optional[str] = None
+      is_html: bool = False
 
       domain_asset_count: int = 0
       domain_total_bytes: int = 0
@@ -61,12 +63,14 @@ def match_history_with_cache(history_entries: list[HistoryEntry], cache_entries:
                               response_code=ref.response_code,
                               content_type=ref.content_type,
                               content_language=ref.content_language,
-                              is_personalized=any(e.is_personalized for e in exact_matches),
+                              is_probably_personalized=any(e.is_probably_personalized for e in exact_matches),
                               is_no_store=any(e.is_no_store for e in exact_matches),
                               age=ref.age,
                               last_modified=ref.last_modified,
                               content_length=ref.content_length,
                               matched_cache_entries=exact_matches,
+                              raw_key=ref.raw_key,
+                              is_html=bool(ref.content_type and "text/html" in ref.content_type),
                               domain_asset_count=domain_asset_count,
                               domain_total_bytes=domain_total_bytes,
                         )
