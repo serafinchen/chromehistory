@@ -43,7 +43,7 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 
 	graph = nx.DiGraph()
 
-	df = df.sort_values("visit_time_dt").copy()
+	df = df.sort_values("visit_time").copy()
 
 	#Calculate if no duration (for circle size)
 	if "duration_sec" not in df.columns:
@@ -51,7 +51,7 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 			df["duration_sec"] = df["visit_duration"]
 		else:
 			df["duration_sec"] = (
-				df["visit_time_dt"].shift(-1) - df["visit_time_dt"]
+				df["visit_time"].shift(-1) - df["visit_time"]
 			).dt.total_seconds()
 
 			df["duration_sec"] = df["duration_sec"].fillna(0).clip(0, 3600)
@@ -71,7 +71,7 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 			title=row["title"],
 			url=row["url"],
 			time=row["visit_time"],
-			time_dt=row["visit_time_dt"],
+			time_dt=row["visit_time"],
 			duration=row["duration_sec"],
 			tags=tags,
 			core=core,

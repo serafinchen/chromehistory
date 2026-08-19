@@ -83,7 +83,7 @@ def build_drilldown(df, rec_id):
       children = (
             children
             .drop_duplicates("rec_id")
-            .sort_values("visit_time_dt")
+            .sort_values("visit_time")
       )
 
 

@@ -21,7 +21,7 @@ sessions = sorted(
 
 latest_session = int(
       df.sort_values(
-            "visit_time_dt"
+            "visit_time"
       ).iloc[-1]["session_id"]
 )
 
@@ -154,7 +154,7 @@ layout = html.Div(
                   id="selected-visit-id",
                   data=int(
                         df.sort_values(
-                              "visit_time_dt"
+                              "visit_time"
                         ).iloc[-1]["rec_id"]
                   )
             )
@@ -209,14 +209,14 @@ def update_visits(
 
       if start:
             start_dt = datetime.fromisoformat(start)
-            filtered = filtered[filtered.visit_time_dt >= start_dt]
+            filtered = filtered[filtered.visit_time >= start_dt]
 
       if end:
             end_dt = datetime.fromisoformat(end) + timedelta(days=1)
-            filtered = filtered[filtered.visit_time_dt < end_dt]
+            filtered = filtered[filtered.visit_time < end_dt]
 
       filtered = filtered.sort_values(
-            "visit_time_dt",
+            "visit_time",
             ascending=False
       )
 
@@ -357,7 +357,7 @@ def update_graph(
 
       filtered = (
             filtered
-            .sort_values("visit_time_dt")
+            .sort_values("visit_time")
             .head(limit)
       )
 

@@ -28,8 +28,8 @@ def add_sessions(df):
 
       for i in range(1, len(df)):
             gap = (
-                  df.loc[i, "visit_time_dt"]
-                  - df.loc[i-1, "visit_time_dt"]
+                  df.loc[i, "visit_time"]
+                  - df.loc[i-1, "visit_time"]
             ).total_seconds()
 
             session_ids.append(
