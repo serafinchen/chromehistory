@@ -4,6 +4,7 @@ from app.cache import get_cached_body
 from app.components.visit_card import make_visit_card
 from app.data import get_profile
 
+#Empty Drilldown display
 def empty_drilldown():
       return html.Div(
             className="empty-state",
@@ -16,7 +17,7 @@ def empty_drilldown():
             ],
       )
 
-
+#Get HTML from row
 def _load_html_for_row(row):
       if not row.get("is_html") or not row.get("raw_key"):
             return None
@@ -28,7 +29,7 @@ def _load_html_for_row(row):
       except Exception:
             return None
 
-
+#Builds Drilldown with the visitcards according to the relationships
 def build_drilldown(df, rec_id):
 
       if rec_id is None:

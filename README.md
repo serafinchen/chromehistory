@@ -7,6 +7,8 @@ It is displayed with dash and networkx.
 Make sure Chrome is closed because otherwise the access to the database is locked.
 Install the requiered packages and execute the App.py file.
 
+Choose a Session and click on the nodes in the Graph to get Details about the visit.
+
 
 ## Setup
 

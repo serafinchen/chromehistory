@@ -10,16 +10,14 @@ TRANSITION_COLORS = {
 	"AUTO_TOPLEVEL": "#bb8fce",
 	"AUTO_SUBFRAME": "#7f8c8d",
 	"MANUAL_SUBFRAME": "#95a5a6",
+	"UNKNOWN": "#555878",
 }
-
 
 def transition_color(transition_core):
 	return TRANSITION_COLORS.get(
 		str(transition_core).upper(),
-		"#555878",
+		"UNKNOWN",
 	)
-
-DEFAULT_SYMBOL = "circle"
 
 TRANSITION_LABELS = {
 	"LINK": "Link clicked (LINK)",
@@ -33,6 +31,7 @@ TRANSITION_LABELS = {
 	"AUTO_TOPLEVEL": "New tab / homepage (AUTO_TOPLEVEL)",
 	"AUTO_SUBFRAME": "Subframe (automatic) (AUTO_SUBFRAME)",
 	"MANUAL_SUBFRAME": "Subframe (manual) (MANUAL_SUBFRAME)",
+	"UNKNOWN": "unknown"
 }
 
 def transition_label(transition_core):
@@ -48,5 +47,3 @@ EDGE_STYLE = {
 
 NORMAL_BORDER_WIDTH = 2
 ADDRESS_BAR_BORDER_WIDTH = 3
-
-ADDRESS_BAR_LABEL = "Triggered manually via address bar"
