@@ -4,12 +4,11 @@ import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
 
-from app.analytics import visit_type_color
 from app.components.nav_graph_style import (
 	ADDRESS_BAR_BORDER_WIDTH,
 	EDGE_STYLE,
 	NORMAL_BORDER_WIDTH,
-	transition_symbol,
+	transition_color,
 	transition_label,
 )
 
@@ -224,22 +223,16 @@ def build_nav_graph(df, selected_id=None):
 		for n in node_ids
 	]
 
-	#node coloaber wird 
-	node_colors = []
-	for n in node_ids:
-		tags = graph.nodes[n]["tags"]
-		node_colors.append(visit_type_color(tags))
+	node_colors = [
+		transition_color(graph.nodes[n]["core"])
+		for n in node_ids
+	]
 
 	if selected_id and selected_id in id_set:
 		node_sizes = [
 			size * 2.2 if n == selected_id else size
 			for n, size in zip(node_ids, node_sizes)
 		]
-
-	node_symbols = [
-		transition_symbol(graph.nodes[n]["core"])
-		for n in node_ids
-	]
 
 	node_line_colors = []
 	node_line_widths = []
@@ -267,7 +260,7 @@ def build_nav_graph(df, selected_id=None):
 			marker=dict(
 				color=node_colors,
 				size=node_sizes,
-				symbol=node_symbols,
+				symbol="circle",
 				line=dict(color=node_line_colors, width=node_line_widths),
 			),
 			hovertext=hover,

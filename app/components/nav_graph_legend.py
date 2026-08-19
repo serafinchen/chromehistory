@@ -2,11 +2,10 @@ import base64
 
 from dash import html
 
-from app.analytics import visit_type_color
 from app.components.nav_graph_style import (
 	EDGE_STYLE,
+	TRANSITION_COLORS,
 	TRANSITION_LABELS,
-	TRANSITION_SYMBOLS,
 )
 
 BG = "#1f2130"
@@ -15,6 +14,17 @@ FG_DIM = "#555878"
 FONT = "Space Mono, monospace"
 
 _ICON_SIZE = 18
+
+def _color_icon(color):
+	s = _ICON_SIZE
+	c = s / 2
+
+	inner = (
+		f'<circle cx="{c}" cy="{c}" r="{c - 3}" '
+		f'fill="{color}" stroke="{color}" stroke-width="1.5" />'
+	)
+
+	return _svg_img(inner)
 
 
 def _svg_img(inner, size=_ICON_SIZE):
@@ -34,46 +44,6 @@ def _svg_img(inner, size=_ICON_SIZE):
 			"display": "block",
 		},
 	)
-
-
-def _symbol_icon(symbol, color=FG, filled=True):
-
-	s = _ICON_SIZE
-	c = s / 2
-
-	base_open = symbol.endswith("-open")
-	name = symbol.replace("-open", "")
-
-	fill = color if (filled and not base_open) else "none"
-	stroke = color
-	sw = "1.5" if name in ("star", "hourglass") else "2"
-
-	if name == "circle":
-		inner = f'<circle cx="{c}" cy="{c}" r="{c - 2}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" />'
-	elif name == "diamond":
-		pts = f"{c},2 {s - 2},{c} {c},{s - 2} 2,{c}"
-		inner = f'<polygon points="{pts}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" />'
-	elif name == "square":
-		inner = f'<rect x="3" y="3" width="{s - 6}" height="{s - 6}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" />'
-	elif name == "star":
-		pts = "9,1 11,7 17,7 12,11 14,17 9,13 4,17 6,11 1,7 7,7"
-		inner = f'<polygon points="{pts}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" />'
-	elif name == "triangle-up":
-		pts = f"{c},2 {s - 2},{s - 2} 2,{s - 2}"
-		inner = f'<polygon points="{pts}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" />'
-	elif name == "pentagon":
-		pts = "9,1 17,7 14,17 4,17 1,7"
-		inner = f'<polygon points="{pts}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" />'
-	elif name == "hexagon":
-		pts = "5,2 13,2 17,9 13,16 5,16 1,9"
-		inner = f'<polygon points="{pts}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" />'
-	elif name == "hourglass":
-		pts = "3,2 15,2 3,16 15,16"
-		inner = f'<polygon points="{pts}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" />'
-	else:
-		inner = f'<circle cx="{c}" cy="{c}" r="{c - 2}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}" />'
-
-	return _svg_img(inner)
 
 
 def _dash_to_svg(dash):
@@ -131,15 +101,11 @@ def _section(title, rows):
 def build_legend():
 
 	transition_rows = [
-		_row(_symbol_icon(TRANSITION_SYMBOLS[core]), TRANSITION_LABELS[core])
-		for core in TRANSITION_SYMBOLS
-	]
-
-	visit_type_rows = [
-		_row(_symbol_icon("circle", color=visit_type_color("TYPED")), "Typed (TYPED)"),
-		_row(_symbol_icon("circle", color=visit_type_color("LINK")), "Link clicked (LINK)"),
-		_row(_symbol_icon("circle", color=visit_type_color("RELOAD")), "Page reloaded (RELOAD)"),
-		_row(_symbol_icon("circle", color=visit_type_color("UNKNOWN")), "Other / unknown"),
+		_row(
+			_color_icon(TRANSITION_COLORS[core]),
+			TRANSITION_LABELS.get(core, core),
+		)
+		for core in TRANSITION_COLORS
 	]
 
 	edge_rows = [
@@ -152,8 +118,7 @@ def build_legend():
 	return html.Div(
 		[
 			_section("Transition", transition_rows),
-			_section("Visit type color", visit_type_rows),
-			_section("Edges/Relationships", edge_rows),
+			_section("Edges / Relationships", edge_rows),
 		],
 		style={
 			"backgroundColor": BG,
