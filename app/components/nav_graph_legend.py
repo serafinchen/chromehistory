@@ -4,11 +4,7 @@ from dash import html
 
 from app.analytics import visit_type_color
 from app.components.nav_graph_style import (
-	CACHED_LABEL,
 	EDGE_STYLE,
-	ERROR_BORDER_COLOR,
-	ERROR_LABEL,
-	FRESH_LABEL,
 	TRANSITION_LABELS,
 	TRANSITION_SYMBOLS,
 )
@@ -139,18 +135,6 @@ def build_legend():
 		for core in TRANSITION_SYMBOLS
 	]
 
-	cache_rows = [
-		_row(_symbol_icon("circle", filled=True), FRESH_LABEL),
-		_row(_symbol_icon("circle", filled=False), CACHED_LABEL),
-	]
-
-	border_rows = [
-		_row(
-			_symbol_icon("circle", color=ERROR_BORDER_COLOR, filled=False),
-			ERROR_LABEL,
-		),
-	]
-
 	visit_type_rows = [
 		_row(_symbol_icon("circle", color=visit_type_color("TYPED")), "Typed (TYPED)"),
 		_row(_symbol_icon("circle", color=visit_type_color("LINK")), "Link clicked (LINK)"),
@@ -170,8 +154,6 @@ def build_legend():
 			_section("Transition", transition_rows),
 			_section("Visit type color", visit_type_rows),
 			_section("Edges/Relationships", edge_rows),
-			_section("Cache-Status", cache_rows),
-			_section("Border", border_rows),
 		],
 		style={
 			"backgroundColor": BG,

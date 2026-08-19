@@ -7,9 +7,7 @@ import plotly.graph_objects as go
 from app.analytics import visit_type_color
 from app.components.nav_graph_style import (
 	ADDRESS_BAR_BORDER_WIDTH,
-	CACHED_SYMBOL_SUFFIX,
 	EDGE_STYLE,
-	ERROR_BORDER_COLOR,
 	NORMAL_BORDER_WIDTH,
 	transition_symbol,
 	transition_label,
@@ -28,15 +26,6 @@ def _parse_transition(row):
 	qualifiers = qual_str.split("|") if qual_str else []
 
 	return core, qualifiers
-
-
-def _is_error_row(row):
-	code = row.get("response_code")
-
-	if code is None or (isinstance(code, float) and pd.isna(code)):
-		return False
-
-	return code >= 400
 
 
 def build_visit_graph(df, limit=MAX_GRAPH_NODES):
@@ -76,9 +65,6 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 			tags=tags,
 			core=core,
 			qualifiers=qualifiers,
-			cached=bool(row.get("cached", False)),
-			is_error=_is_error_row(row),
-			response_code=row.get("response_code"),
 			content_type=row.get("content_type"),
 		)
 
@@ -250,12 +236,10 @@ def build_nav_graph(df, selected_id=None):
 			for n, size in zip(node_ids, node_sizes)
 		]
 
-	node_symbols = []
-	for n in node_ids:
-		symbol = transition_symbol(graph.nodes[n]["core"])
-		if graph.nodes[n]["cached"] and not symbol.endswith("-open"):
-			symbol += CACHED_SYMBOL_SUFFIX
-		node_symbols.append(symbol)
+	node_symbols = [
+		transition_symbol(graph.nodes[n]["core"])
+		for n in node_ids
+	]
 
 	node_line_colors = []
 	node_line_widths = []
@@ -263,10 +247,7 @@ def build_nav_graph(df, selected_id=None):
 		node = graph.nodes[n]
 		qualifiers = [q.upper() for q in node["qualifiers"]]
 
-		if node["is_error"]:
-			node_line_colors.append(ERROR_BORDER_COLOR)
-		else:
-			node_line_colors.append("#888888")
+		node_line_colors.append("#888888")
 
 		if any("ADDRESS_BAR" in q for q in qualifiers):
 			node_line_widths.append(ADDRESS_BAR_BORDER_WIDTH)

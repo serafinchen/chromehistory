@@ -44,15 +44,7 @@ EDGE_STYLE = {
 }
 
 
-ERROR_BORDER_COLOR = "#ff4d4d"
-ERROR_BORDER_WIDTH = 3
 NORMAL_BORDER_WIDTH = 2
 ADDRESS_BAR_BORDER_WIDTH = 3
 
-ERROR_LABEL = "Error response (HTTP ≥ 400)"
 ADDRESS_BAR_LABEL = "Triggered manually via address bar"
-
-CACHED_SYMBOL_SUFFIX = "-open"
-
-CACHED_LABEL = "Loaded from cache (outline symbol only)"
-FRESH_LABEL = "Loaded fresh from server (filled symbol)"
