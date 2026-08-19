@@ -6,6 +6,8 @@ from app.components.nav_graph_style import (
 	EDGE_STYLE,
 	TRANSITION_COLORS,
 	TRANSITION_LABELS,
+	NORMAL_BORDER_WIDTH,
+	ADDRESS_BAR_BORDER_WIDTH,
 )
 
 BG = "#1f2130"
@@ -68,6 +70,17 @@ def _edge_icon(color, dash=None, width=2):
 
 	return _svg_img(inner)
 
+def _node_border_icon(width):
+	s = _ICON_SIZE
+	c = s / 2
+
+	inner = (
+		f'<circle cx="{c}" cy="{c}" r="{c - 3}" '
+		f'fill="none" stroke="{FG}" stroke-width="{width}" />'
+	)
+
+	return _svg_img(inner)
+
 
 def _row(icon, label):
 	return html.Div(
@@ -109,16 +122,22 @@ def build_legend():
 	]
 
 	edge_rows = [
-		_row(_edge_icon("#888888"), "lane"),
+		_row(_edge_icon("#888888"), "other"),
 		_row(_edge_icon(**EDGE_STYLE["redirect"]), "redirect"),
 		_row(_edge_icon(**EDGE_STYLE["back_forward"]), "back_forward"),
 		_row(_edge_icon(**EDGE_STYLE["tab"]), "tab"),
+	]
+
+	border_rows = [
+		_row(_node_border_icon(NORMAL_BORDER_WIDTH), "normal"),
+		_row(_node_border_icon(ADDRESS_BAR_BORDER_WIDTH), "via address bar"),
 	]
 
 	return html.Div(
 		[
 			_section("Transition", transition_rows),
 			_section("Edges / Relationships", edge_rows),
+			_section("Node border", border_rows),
 		],
 		style={
 			"backgroundColor": BG,
