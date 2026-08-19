@@ -49,7 +49,7 @@ def make_visit_card(row, role="active", html_content=None):
                   ),
 
                   html.Div(
-                        f"is_probably_personalized: {row['is_probably_personalized']}",
+                        f"is_probably_personalized (Vary: Cookie or Vary: Authorization): {row['is_probably_personalized']}",
                         className="cache_visit",
                   ),
 
