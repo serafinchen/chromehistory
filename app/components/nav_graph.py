@@ -27,6 +27,7 @@ def _parse_transition(row):
 	return core, qualifiers
 
 
+#Creates Nodes and matching Edges according to the History-Entries
 def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 
 	graph = nx.DiGraph()

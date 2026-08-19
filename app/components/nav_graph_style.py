@@ -16,7 +16,7 @@ TRANSITION_COLORS = {
 def transition_color(transition_core):
 	return TRANSITION_COLORS.get(
 		str(transition_core).upper(),
-		"UNKNOWN",
+		TRANSITION_COLORS["UNKNOWN"],
 	)
 
 TRANSITION_LABELS = {
