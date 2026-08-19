@@ -124,7 +124,7 @@ def build_drilldown(df, rec_id):
       )
 
       if not children.empty:
-
+            multiple_children = len(children) > 1
             for _, child in children.iterrows():
 
                   edge = "Opened in new tab"
@@ -132,6 +132,9 @@ def build_drilldown(df, rec_id):
                   if child["from_visit_id"] == rec_id:
                         edge = "Navigation"
 
+                  if multiple_children:
+                        edge = f"{edge} (from Visit {rec_id})"
+                        
                   content.append(
                   html.Div(
                         edge,

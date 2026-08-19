@@ -12,6 +12,7 @@ from app.mapping import MatchedVisit, match_history_with_cache
 
 _profile_singleton: ChromiumProfileFolder | None = None
 
+#Singleton for profile
 def get_profile() -> ChromiumProfileFolder:
       global _profile_singleton
 
@@ -44,7 +45,7 @@ def _visit_to_row(v: MatchedVisit) -> dict:
       )
       return row
 
-#Creates Pandaas-Dataframe
+#Creates Pandas-Dataframe
 def load_df():
 
       profile = get_profile()
