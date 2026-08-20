@@ -311,14 +311,12 @@ def select_card(clicks,ids):
       ),
       prevent_initial_call=True
 )
-def graph_click(
-      data
-):
-
-      if not data:
+def graph_click(data):
+      if not data or not data.get("points"):
             return None
 
       return data["points"][0]["customdata"]
+
 @callback(
       Output(
             "nav-graph",
