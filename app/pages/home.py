@@ -124,13 +124,13 @@ layout = html.Div(
                                     ),
                                     html.Div(
                                           className="graph-with-legend",
-                                          style={
-                                                "display": "flex",
-                                                "flexDirection": "row",
-                                                "gap": "12px",
-                                                "height": "100%",
-                                                "minHeight": 0
-                                          },
+										style={
+											"display": "flex",
+											"flexDirection": "row",
+											"gap": "12px",
+											"flex": "1 1 auto",
+											"minHeight": 0
+										},
                                           children=[
                                                 dcc.Graph(
                                                       id="nav-graph",

@@ -144,6 +144,11 @@ def build_legend():
 			"padding": "14px 16px",
 			"borderRadius": "8px",
 			"fontFamily": FONT,
+			"flex": "0 0 260px",
 			"width": "260px",
+			"height": "100%",
+			"minHeight": 0,
+			"overflowY": "auto",
+			"overflowX": "hidden",
 		},
 	)
