@@ -35,15 +35,12 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 	df = df.sort_values("visit_time").copy()
 
 	#Calculate if no duration (for circle size)
-	if "duration_sec" not in df.columns:
-		if "visit_duration" in df.columns:
-			df["duration_sec"] = df["visit_duration"]
-		else:
-			df["duration_sec"] = (
-				df["visit_time"].shift(-1) - df["visit_time"]
-			).dt.total_seconds()
-
-			df["duration_sec"] = df["duration_sec"].fillna(0).clip(0, 3600)
+	
+	df["duration_sec"] = (
+	pd.to_numeric(df["visit_duration"], errors="coerce")
+	.fillna(0)
+	.clip(0, 3600)
+	)
 
 	if len(df) > limit:
 		df = df.tail(limit)
