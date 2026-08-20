@@ -1,18 +1,23 @@
-TRANSITION_SYMBOLS = {
-	"LINK": "circle",
-	"TYPED": "diamond",
-	"AUTO_BOOKMARK": "star",
-	"FORM_SUBMIT": "square",
-	"GENERATED": "triangle-up",
-	"KEYWORD": "pentagon",
-	"KEYWORD_GENERATED": "pentagon",
-	"RELOAD": "hexagon",
-	"AUTO_TOPLEVEL": "hourglass",
-	"AUTO_SUBFRAME": "circle-open",
-	"MANUAL_SUBFRAME": "circle-open",
+TRANSITION_COLORS = {
+	"LINK": "#5dade2",
+	"TYPED": "#f4d03f",
+	"AUTO_BOOKMARK": "#58d68d",
+	"FORM_SUBMIT": "#af7ac5",
+	"GENERATED": "#ec7063",
+	"KEYWORD": "#48c9b0",
+	"KEYWORD_GENERATED": "#45b39d",
+	"RELOAD": "#f5b041",
+	"AUTO_TOPLEVEL": "#bb8fce",
+	"AUTO_SUBFRAME": "#7f8c8d",
+	"MANUAL_SUBFRAME": "#95a5a6",
+	"UNKNOWN": "#555878",
 }
 
-DEFAULT_SYMBOL = "circle"
+def transition_color(transition_core):
+	return TRANSITION_COLORS.get(
+		str(transition_core).upper(),
+		TRANSITION_COLORS["UNKNOWN"],
+	)
 
 TRANSITION_LABELS = {
 	"LINK": "Link clicked (LINK)",
@@ -26,12 +31,8 @@ TRANSITION_LABELS = {
 	"AUTO_TOPLEVEL": "New tab / homepage (AUTO_TOPLEVEL)",
 	"AUTO_SUBFRAME": "Subframe (automatic) (AUTO_SUBFRAME)",
 	"MANUAL_SUBFRAME": "Subframe (manual) (MANUAL_SUBFRAME)",
+	"UNKNOWN": "unknown"
 }
-
-
-def transition_symbol(transition_core):
-	return TRANSITION_SYMBOLS.get(str(transition_core).upper(), DEFAULT_SYMBOL)
-
 
 def transition_label(transition_core):
 	return TRANSITION_LABELS.get(str(transition_core).upper(), str(transition_core))
@@ -44,15 +45,5 @@ EDGE_STYLE = {
 }
 
 
-ERROR_BORDER_COLOR = "#ff4d4d"
-ERROR_BORDER_WIDTH = 3
 NORMAL_BORDER_WIDTH = 2
 ADDRESS_BAR_BORDER_WIDTH = 3
-
-ERROR_LABEL = "Error response (HTTP ≥ 400)"
-ADDRESS_BAR_LABEL = "Triggered manually via address bar"
-
-CACHED_SYMBOL_SUFFIX = "-open"
-
-CACHED_LABEL = "Loaded from cache (outline symbol only)"
-FRESH_LABEL = "Loaded fresh from server (filled symbol)"

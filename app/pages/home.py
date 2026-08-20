@@ -21,7 +21,7 @@ sessions = sorted(
 
 latest_session = int(
       df.sort_values(
-            "visit_time_dt"
+            "visit_time"
       ).iloc[-1]["session_id"]
 )
 
@@ -124,13 +124,13 @@ layout = html.Div(
                                     ),
                                     html.Div(
                                           className="graph-with-legend",
-                                          style={
-                                                "display": "flex",
-                                                "flexDirection": "row",
-                                                "gap": "12px",
-                                                "height": "100%",
-                                                "minHeight": 0
-                                          },
+										style={
+											"display": "flex",
+											"flexDirection": "row",
+											"gap": "12px",
+											"flex": "1 1 auto",
+											"minHeight": 0
+										},
                                           children=[
                                                 dcc.Graph(
                                                       id="nav-graph",
@@ -154,7 +154,7 @@ layout = html.Div(
                   id="selected-visit-id",
                   data=int(
                         df.sort_values(
-                              "visit_time_dt"
+                              "visit_time"
                         ).iloc[-1]["rec_id"]
                   )
             )
@@ -209,14 +209,14 @@ def update_visits(
 
       if start:
             start_dt = datetime.fromisoformat(start)
-            filtered = filtered[filtered.visit_time_dt >= start_dt]
+            filtered = filtered[filtered.visit_time >= start_dt]
 
       if end:
             end_dt = datetime.fromisoformat(end) + timedelta(days=1)
-            filtered = filtered[filtered.visit_time_dt < end_dt]
+            filtered = filtered[filtered.visit_time < end_dt]
 
       filtered = filtered.sort_values(
-            "visit_time_dt",
+            "visit_time",
             ascending=False
       )
 
@@ -311,14 +311,12 @@ def select_card(clicks,ids):
       ),
       prevent_initial_call=True
 )
-def graph_click(
-      data
-):
-
-      if not data:
+def graph_click(data):
+      if not data or not data.get("points"):
             return None
 
       return data["points"][0]["customdata"]
+
 @callback(
       Output(
             "nav-graph",
@@ -357,7 +355,7 @@ def update_graph(
 
       filtered = (
             filtered
-            .sort_values("visit_time_dt")
+            .sort_values("visit_time")
             .head(limit)
       )
 

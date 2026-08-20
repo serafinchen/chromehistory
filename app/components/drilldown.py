@@ -4,6 +4,7 @@ from app.cache import get_cached_body
 from app.components.visit_card import make_visit_card
 from app.data import get_profile
 
+#Empty Drilldown display
 def empty_drilldown():
       return html.Div(
             className="empty-state",
@@ -16,7 +17,7 @@ def empty_drilldown():
             ],
       )
 
-
+#Get HTML from row
 def _load_html_for_row(row):
       if not row.get("is_html") or not row.get("raw_key"):
             return None
@@ -28,7 +29,7 @@ def _load_html_for_row(row):
       except Exception:
             return None
 
-
+#Builds Drilldown with the visitcards according to the relationships
 def build_drilldown(df, rec_id):
 
       if rec_id is None:
@@ -83,7 +84,7 @@ def build_drilldown(df, rec_id):
       children = (
             children
             .drop_duplicates("rec_id")
-            .sort_values("visit_time_dt")
+            .sort_values("visit_time")
       )
 
 
@@ -124,7 +125,7 @@ def build_drilldown(df, rec_id):
       )
 
       if not children.empty:
-
+            multiple_children = len(children) > 1
             for _, child in children.iterrows():
 
                   edge = "Opened in new tab"
@@ -132,6 +133,9 @@ def build_drilldown(df, rec_id):
                   if child["from_visit_id"] == rec_id:
                         edge = "Navigation"
 
+                  if multiple_children:
+                        edge = f"{edge} (from Visit {rec_id})"
+                        
                   content.append(
                   html.Div(
                         edge,

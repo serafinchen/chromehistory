@@ -4,14 +4,11 @@ import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
 
-from app.analytics import visit_type_color
 from app.components.nav_graph_style import (
 	ADDRESS_BAR_BORDER_WIDTH,
-	CACHED_SYMBOL_SUFFIX,
 	EDGE_STYLE,
-	ERROR_BORDER_COLOR,
 	NORMAL_BORDER_WIDTH,
-	transition_symbol,
+	transition_color,
 	transition_label,
 )
 
@@ -30,31 +27,19 @@ def _parse_transition(row):
 	return core, qualifiers
 
 
-def _is_error_row(row):
-	code = row.get("response_code")
-
-	if code is None or (isinstance(code, float) and pd.isna(code)):
-		return False
-
-	return code >= 400
-
-
+#Creates Nodes and matching Edges according to the History-Entries
 def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 
 	graph = nx.DiGraph()
 
-	df = df.sort_values("visit_time_dt").copy()
+	df = df.sort_values("visit_time").copy()
 
 	#Calculate if no duration (for circle size)
-	if "duration_sec" not in df.columns:
-		if "visit_duration" in df.columns:
-			df["duration_sec"] = df["visit_duration"]
-		else:
-			df["duration_sec"] = (
-				df["visit_time_dt"].shift(-1) - df["visit_time_dt"]
-			).dt.total_seconds()
-
-			df["duration_sec"] = df["duration_sec"].fillna(0).clip(0, 3600)
+	df["duration_sec"] = (
+		pd.to_numeric(df["visit_duration"], errors="coerce")
+		.fillna(0)
+		.clip(0, 3600)
+	)
 
 	if len(df) > limit:
 		df = df.tail(limit)
@@ -71,14 +56,11 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 			title=row["title"],
 			url=row["url"],
 			time=row["visit_time"],
-			time_dt=row["visit_time_dt"],
+			time_dt=row["visit_time"],
 			duration=row["duration_sec"],
 			tags=tags,
 			core=core,
 			qualifiers=qualifiers,
-			cached=bool(row.get("cached", False)),
-			is_error=_is_error_row(row),
-			response_code=row.get("response_code"),
 			content_type=row.get("content_type"),
 		)
 
@@ -232,17 +214,16 @@ def build_nav_graph(df, selected_id=None):
 
 	node_ids = list(graph.nodes())
 
-	# Node size grows sublinearly with visit duration, keeping long visits readable.
+	# Node size grows with visit duration
 	node_sizes = [
 		8 + min(math.sqrt(max(graph.nodes[n]["duration"], 0) / 20), 12)
 		for n in node_ids
 	]
 
-	#node coloaber wird 
-	node_colors = []
-	for n in node_ids:
-		tags = graph.nodes[n]["tags"]
-		node_colors.append(visit_type_color(tags))
+	node_colors = [
+		transition_color(graph.nodes[n]["core"])
+		for n in node_ids
+	]
 
 	if selected_id and selected_id in id_set:
 		node_sizes = [
@@ -250,23 +231,13 @@ def build_nav_graph(df, selected_id=None):
 			for n, size in zip(node_ids, node_sizes)
 		]
 
-	node_symbols = []
-	for n in node_ids:
-		symbol = transition_symbol(graph.nodes[n]["core"])
-		if graph.nodes[n]["cached"] and not symbol.endswith("-open"):
-			symbol += CACHED_SYMBOL_SUFFIX
-		node_symbols.append(symbol)
-
 	node_line_colors = []
 	node_line_widths = []
 	for n in node_ids:
 		node = graph.nodes[n]
 		qualifiers = [q.upper() for q in node["qualifiers"]]
 
-		if node["is_error"]:
-			node_line_colors.append(ERROR_BORDER_COLOR)
-		else:
-			node_line_colors.append("#888888")
+		node_line_colors.append("#888888")
 
 		if any("ADDRESS_BAR" in q for q in qualifiers):
 			node_line_widths.append(ADDRESS_BAR_BORDER_WIDTH)
@@ -286,7 +257,7 @@ def build_nav_graph(df, selected_id=None):
 			marker=dict(
 				color=node_colors,
 				size=node_sizes,
-				symbol=node_symbols,
+				symbol="circle",
 				line=dict(color=node_line_colors, width=node_line_widths),
 			),
 			hovertext=hover,

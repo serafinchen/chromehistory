@@ -6,12 +6,13 @@ from ccl_chromium_reader import ChromiumProfileFolder
 
 from app.analytics import add_sessions
 from app.cache import load_cache_entries
-from app.config import PROFILE_PATH
+from app.helpers import PROFILE_PATH
 from app.history import load_history_entries
 from app.mapping import MatchedVisit, match_history_with_cache
 
 _profile_singleton: ChromiumProfileFolder | None = None
 
+#Singleton for profile
 def get_profile() -> ChromiumProfileFolder:
       global _profile_singleton
 
@@ -21,7 +22,9 @@ def get_profile() -> ChromiumProfileFolder:
       return _profile_singleton
 
 def _visit_to_row(v: MatchedVisit) -> dict:
+      #History Attributes
       row = asdict(v.history)
+      #Cache Attributes
       row.update(
             {
                   "match_type": v.match_type.value,
@@ -42,20 +45,21 @@ def _visit_to_row(v: MatchedVisit) -> dict:
       )
       return row
 
-
+#Creates Pandas-Dataframe
 def load_df():
+
       profile = get_profile()
       history_entries = load_history_entries(PROFILE_PATH)
       cache_entries = load_cache_entries(profile)
       visits = match_history_with_cache(history_entries, cache_entries)
 
       df = pd.DataFrame([_visit_to_row(v) for v in visits])
+
       df["domain"] = df["url"].apply(lambda u: urlparse(u).netloc)
-      df["visit_time_dt"] = pd.to_datetime(df["visit_time"])
       df["duration"] = df["visit_duration"]
       df = add_sessions(df)
 
-      return df.sort_values("visit_time_dt").reset_index(drop=True)
+      return df.sort_values("visit_time").reset_index(drop=True)
 
 
 def filter_visits(df, session_id):
