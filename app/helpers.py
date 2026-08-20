@@ -1,15 +1,29 @@
 import datetime
 from urllib.parse import urlparse
+import os
+from pathlib import Path
 
-import pathlib
+def get_browser_profile(browser: str) -> Path:
+      local_app_data = Path(os.environ["LOCALAPPDATA"])
+      roaming_app_data = Path(os.environ["APPDATA"])
 
-PROFILE_PATH = pathlib.Path(r"C:\Users\seraf\AppData\Local\Google\Chrome\User Data\Default")
+      profiles = {
+            "chrome": local_app_data / "Google/Chrome/User Data/Default",
+            "edge": local_app_data / "Microsoft/Edge/User Data/Default",
+            "brave": local_app_data / "BraveSoftware/Brave-Browser/User Data/Default",
+            "opera": roaming_app_data / "Opera Software/Opera Stable",
+      }
+
+      return profiles[browser]
+
+
+PROFILE_PATH = get_browser_profile("chrome")
 
 CACHE_PATHS = {
-      "chrome": pathlib.Path.home() / "AppData/Local/Google/Chrome/User Data/Default",
-      "edge":   pathlib.Path.home() / "AppData/Local/Microsoft/Edge/User Data/Default/Cache/Cache_Data",
-      "brave":  pathlib.Path.home() / "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Cache/Cache_Data",
-      "opera":  pathlib.Path.home() / "AppData/Roaming/Opera Software/Opera Stable/Cache/Cache_Data",
+      "chrome": Path.home() / "AppData/Local/Google/Chrome/User Data/Default",
+      "edge":   Path.home() / "AppData/Local/Microsoft/Edge/User Data/Default/Cache/Cache_Data",
+      "brave":  Path.home() / "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Cache/Cache_Data",
+      "opera":  Path.home() / "AppData/Roaming/Opera Software/Opera Stable/Cache/Cache_Data",
 }
       
 def chrome_time_to_datetime(chrome_time):
