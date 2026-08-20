@@ -34,9 +34,9 @@ layout = html.Div(
                         html.Div(
                               className="header-title",
                               children=[
-                                    "BROWSER",
+                                    "HISTORY",
                                     html.Span(
-                                          " SESSION EXPLORER"
+                                          " ANALYSER"
                                     )
                               ]
                         ),
