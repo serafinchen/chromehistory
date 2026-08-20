@@ -35,11 +35,10 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 	df = df.sort_values("visit_time").copy()
 
 	#Calculate if no duration (for circle size)
-	
 	df["duration_sec"] = (
-	pd.to_numeric(df["visit_duration"], errors="coerce")
-	.fillna(0)
-	.clip(0, 3600)
+		pd.to_numeric(df["visit_duration"], errors="coerce")
+		.fillna(0)
+		.clip(0, 3600)
 	)
 
 	if len(df) > limit:
@@ -215,7 +214,7 @@ def build_nav_graph(df, selected_id=None):
 
 	node_ids = list(graph.nodes())
 
-	# Node size grows sublinearly with visit duration, keeping long visits readable.
+	# Node size grows with visit duration
 	node_sizes = [
 		8 + min(math.sqrt(max(graph.nodes[n]["duration"], 0) / 20), 12)
 		for n in node_ids
