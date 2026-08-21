@@ -231,7 +231,6 @@ def graph_click(data):
 def update_graph(
       session,
       selected,
-      domain=None,
       limit=500
 ):
       filtered = df.copy()
@@ -239,11 +238,6 @@ def update_graph(
       if session != -1:
             filtered = filtered[
                   filtered.session_id == session
-            ]
-
-      if domain:
-            filtered = filtered[
-                  filtered.domain == domain
             ]
 
       filtered = (
