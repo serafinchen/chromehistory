@@ -19,3 +19,9 @@ pip install git+https://github.com/cclgroupltd/ccl_chromium_reader.git
 pip install dash
 
 pip install Brotli
+
+pip install pandas
+
+pip install plotly
+
+pip install pytest
