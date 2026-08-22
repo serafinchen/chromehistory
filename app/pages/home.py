@@ -1,6 +1,5 @@
 import dash
 from dash import ALL, Input, Output, State, callback, ctx, dcc, html
-from datetime import datetime, timedelta
 from app.components.drilldown import build_drilldown, empty_drilldown
 from app.components.nav_graph import build_nav_graph
 from app.components.nav_graph_legend import build_legend
@@ -164,112 +163,6 @@ layout = html.Div(
 
 @callback(
       Output(
-            "visit-list",
-            "children"
-      ),
-      Output(
-            "table-count",
-            "children"
-      ),
-      Input(
-            "session-filter",
-            "value"
-      ),
-      Input(
-            "duration-filter",
-            "value"
-      ),
-      Input(
-            "date-filter",
-            "start_date"
-      ),
-      Input(
-            "date-filter",
-            "end_date"
-      )
-)
-def update_visits(
-      session,
-      duration,
-      start,
-      end
-):
-
-      filtered = df.copy()
-
-      if session != -1:
-            filtered = filtered[
-                  filtered.session_id == session
-            ]
-
-      if duration != -1:
-            filtered = filtered[
-                  filtered.duration >= duration
-            ]
-
-      if start:
-            start_dt = datetime.fromisoformat(start)
-            filtered = filtered[filtered.visit_time >= start_dt]
-
-      if end:
-            end_dt = datetime.fromisoformat(end) + timedelta(days=1)
-            filtered = filtered[filtered.visit_time < end_dt]
-
-      filtered = filtered.sort_values(
-            "visit_time",
-            ascending=False
-      )
-
-      cards = []
-
-      for _, row in filtered.iterrows():
-
-            cards.append(
-                  html.Div(
-                        className="visit-card",
-                        id={
-                              "type": "visit-card",
-                              "id": int(row.visit_id)
-                        },
-                        n_clicks=0,
-                        children=[
-                              html.Div(
-                                    row.title,
-                                    className="vc-title"
-                              ),
-                              html.Div(
-                                    row.url,
-                                    className="vc-url"
-                              ),
-                              html.Div(
-                                    [
-                                          html.Span(
-                                                row.domain,
-                                                className="vc-tag"
-                                          ),
-                                          html.Span(
-                                                f"{row.duration:.1f}s",
-                                                className="vc-tag hi"
-                                          ),
-                                          html.Span(
-                                                f"Session {row.session_id}",
-                                                className="vc-tag"
-                                          )
-                                    ],
-                                    className="vc-meta"
-                              )
-                        ]
-                  )
-            )
-
-      return (
-            cards,
-            f"{len(cards)} visits"
-      )
-
-
-@callback(
-      Output(
             "selected-visit-id",
             "data"
       ),
@@ -289,7 +182,7 @@ def update_visits(
       ),
       prevent_initial_call=True
 )
-def select_card(clicks,ids):
+def select_card(clicks, id):
 
       triggered = ctx.triggered_id
 
@@ -338,7 +231,6 @@ def graph_click(data):
 def update_graph(
       session,
       selected,
-      domain=None,
       limit=500
 ):
       filtered = df.copy()
@@ -346,11 +238,6 @@ def update_graph(
       if session != -1:
             filtered = filtered[
                   filtered.session_id == session
-            ]
-
-      if domain:
-            filtered = filtered[
-                  filtered.domain == domain
             ]
 
       filtered = (
@@ -383,11 +270,5 @@ def update_graph(
             "data"
       )
 )
-def update_drilldown(
-      rec_id
-):
-
-      return build_drilldown(
-            df,
-            rec_id
-      )
+def update_drilldown(rec_id):
+      return build_drilldown(df, rec_id)
