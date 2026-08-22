@@ -26,11 +26,14 @@ def _parse_transition(row):
 
 	return core, qualifiers
 
+def _safe_str(value, fallback=""):
+	if value is None or (isinstance(value, float) and pd.isna(value)):
+		return fallback
+	return str(value)
 
 #Creates Nodes and matching Edges according to the History-Entries
 def build_visit_graph(df, limit=MAX_GRAPH_NODES):
-
-	graph = nx.DiGraph()
+	graph = nx.MultiDiGraph()
 
 	df = df.sort_values("visit_time").copy()
 
@@ -53,8 +56,8 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 
 		graph.add_node(
 			row["rec_id"],
-			title=row["title"],
-			url=row["url"],
+			title=_safe_str(row["title"], fallback="(kein Titel)"),
+    		url=_safe_str(row["url"], fallback=""),
 			time=row["visit_time"],
 			time_dt=row["visit_time"],
 			duration=row["duration_sec"],
@@ -90,14 +93,20 @@ def _timeline_layout(graph):
 
 	for node in nodes:
 		preds = list(graph.predecessors(node))
+
+		def _has_etype(p, target, etype):
+			# dict: {key: attrs} for MultiDiGraph
+			edges = graph.get_edge_data(p, target)
+			return any(d.get("etype") == etype for d in edges.values())
+		
 		nav_parent = next(
-			(p for p in preds if graph.edges[p, node]["etype"] == "nav"), None
+			(p for p in preds if _has_etype(p, node, "nav")), None
 		)
 		tab_parent = next(
-			(p for p in preds if graph.edges[p, node]["etype"] == "tab"), None
+			(p for p in preds if _has_etype(p, node, "tab")), None
 		)
 		if nav_parent is not None:
-			lane = lane_of[nav_parent] if nav_parent in lane_of else next_lane
+			lane = lane_of.get(nav_parent, next_lane)
 			if nav_parent not in lane_of:
 				next_lane += 1
 
@@ -138,7 +147,7 @@ def build_nav_graph(df, selected_id=None):
 
 	fig = go.Figure()
 
-	nav_edges_by_lane = {}
+	nav_x, nav_y = [], []
 	redirect_x, redirect_y = [], []
 	back_forward_x, back_forward_y = [], []
 	tab_x, tab_y = [], []
@@ -161,22 +170,20 @@ def build_nav_graph(df, selected_id=None):
 			back_forward_x += [x0, x1, None]
 			back_forward_y += [y0, y1, None]
 		else:
-			lane = lane_of[target]
-			bucket = nav_edges_by_lane.setdefault(lane, ([], []))
-			bucket[0].extend([x0, x1, None])
-			bucket[1].extend([y0, y1, None])
+			nav_x += [x0, x1, None]
+			nav_y += [y0, y1, None]
 
-	for lane, (xs, ys) in nav_edges_by_lane.items():
-		fig.add_trace(
-			go.Scatter(
-				x=xs,
-				y=ys,
-				mode="lines",
-				line=dict(color="#888888", width=2),
-				hoverinfo="none",
-				showlegend=False,
-			)
+
+	fig.add_trace(
+		go.Scatter(
+			x=nav_x,
+			y=nav_y,
+			mode="lines",
+			line=dict(color="#888888", width=2),
+			hoverinfo="none",
+			showlegend=False,
 		)
+	)
 
 	#Different Lines between nodes (tab, back_forward, redirect)
 	fig.add_trace(
