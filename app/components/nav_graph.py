@@ -56,7 +56,7 @@ def build_visit_graph(df, limit=MAX_GRAPH_NODES):
 
 		graph.add_node(
 			row["rec_id"],
-			title=_safe_str(row["title"], fallback="(kein Titel)"),
+			title=_safe_str(row["title"], fallback="(no title)"),
     		url=_safe_str(row["url"], fallback=""),
 			time=row["visit_time"],
 			time_dt=row["visit_time"],
